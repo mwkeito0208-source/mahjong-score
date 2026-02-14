@@ -10,7 +10,8 @@ type Props = {
 
 export function InviteLinkModal({ group, onClose }: Props) {
   const [copied, setCopied] = useState(false);
-  const inviteLink = `https://mahjong-app.example.com/join/${group.id}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const inviteLink = `${origin}/join/${group.id}`;
 
   const handleCopy = async () => {
     try {

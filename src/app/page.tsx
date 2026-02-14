@@ -117,7 +117,7 @@ export default function Home() {
         <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3">
           <span className="text-gray-400">🔗</span>
           <span className="text-sm text-gray-500">
-            https://mahjong-app.example.com/join/...
+            {typeof window !== "undefined" ? window.location.origin : ""}/join/...
           </span>
         </div>
       </div>
