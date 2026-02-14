@@ -32,6 +32,7 @@ type State = {
 
 type Actions = {
   addGroup: (name: string, members?: string[]) => Group;
+  importGroup: (group: Group) => void;
   updateGroup: (id: string, patch: Partial<Pick<Group, "name" | "members">>) => void;
   deleteGroup: (id: string) => void;
   createSession: (params: {
@@ -67,6 +68,14 @@ export const useAppStore = create<State & Actions>()(
         set((s) => ({ groups: [group, ...s.groups] }));
         syncAddGroup(group);
         return group;
+      },
+
+      importGroup: (group) => {
+        set((s) => {
+          // 既にあればスキップ
+          if (s.groups.some((g) => g.id === group.id)) return s;
+          return { groups: [group, ...s.groups] };
+        });
       },
 
       updateGroup: (id, patch) => {

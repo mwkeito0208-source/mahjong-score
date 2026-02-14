@@ -8,6 +8,42 @@ import type {
   Expense,
 } from "./types";
 
+/** Supabaseから単一グループを取得 */
+export async function fetchGroup(groupId: string): Promise<Group | null> {
+  const { data: group, error: gErr } = await supabase
+    .from("groups")
+    .select("id, name, created_at")
+    .eq("id", groupId)
+    .single();
+
+  if (gErr || !group) return null;
+
+  const { data: members } = await supabase
+    .from("members")
+    .select("name")
+    .eq("group_id", groupId);
+
+  return {
+    id: group.id,
+    name: group.name,
+    members: members?.map((m) => m.name) ?? [],
+    createdAt: group.created_at,
+  };
+}
+
+/** Supabaseのグループにメンバーを追加 */
+export async function addMemberToGroup(
+  groupId: string,
+  name: string
+): Promise<void> {
+  const { error } = await supabase.from("members").insert({
+    id: crypto.randomUUID(),
+    group_id: groupId,
+    name,
+  });
+  if (error) throw error;
+}
+
 /** Supabaseから全グループを取得 */
 export async function fetchGroups(): Promise<Group[]> {
   const { data: groups, error: gErr } = await supabase
