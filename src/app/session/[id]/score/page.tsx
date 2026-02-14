@@ -1,0 +1,160 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+import { ScoreTable } from "@/components/score/ScoreTable";
+import { AddRoundModal } from "@/components/score/AddRoundModal";
+import {
+  roundScore,
+  calculateTotals,
+  calculateMoney,
+  type TobiInfo,
+  type RoundData,
+} from "@/lib/score";
+import { useAppStore } from "@/store";
+import { getSession, getGroup } from "@/store/selectors";
+import { useHydration } from "@/store/useHydration";
+
+const RATE_LABELS: Record<number, string> = {
+  0: "ノーレート",
+  50: "テンゴ",
+  100: "テンピン",
+  200: "点2",
+  500: "点5",
+};
+
+function formatUma(uma: number[]): string {
+  if (uma.every((v) => v === 0)) return "ナシ";
+  return `${Math.abs(uma[1])}-${Math.abs(uma[0])}`;
+}
+
+export default function SessionPage() {
+  const router = useRouter();
+  const params = useParams();
+  const hydrated = useHydration();
+  const sessionId = params.id as string;
+
+  const sessions = useAppStore((s) => s.sessions);
+  const groups = useAppStore((s) => s.groups);
+  const addRound = useAppStore((s) => s.addRound);
+
+  const session = getSession(sessions, sessionId);
+  const group = session ? getGroup(groups, session.groupId) : undefined;
+
+  const [showInputModal, setShowInputModal] = useState(false);
+
+  if (!hydrated) {
+    return (
+      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
+        <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
+          <div className="text-lg font-bold">読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
+        <div className="rounded-xl bg-white p-8 text-center shadow-md">
+          <p className="text-gray-500">セッションが見つかりません</p>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-4 rounded-lg bg-green-600 px-6 py-2 text-white"
+          >
+            ホームに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { settings } = session;
+  const roundDataList: RoundData[] = session.rounds.map((r) => ({
+    scores: r.scores,
+    tobi: r.tobi,
+  }));
+  const totals =
+    roundDataList.length > 0
+      ? calculateTotals(
+          roundDataList,
+          settings.returnPoints,
+          settings.uma,
+          settings.tobiPenalty,
+          settings.startPoints
+        )
+      : session.members.map(() => 0);
+  const money = calculateMoney(totals, settings.rate);
+
+  const roundScoresPerRound = session.rounds.map((round) => ({
+    id: round.id,
+    scores: round.scores.map((score) => (score !== null ? roundScore(score) : null)),
+    tobi: round.tobi,
+  }));
+
+  const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo) => {
+    addRound(session.id, rawScores, tobi);
+    setShowInputModal(false);
+  };
+
+  const sessionDate = new Date(session.date);
+  const dateStr = `${sessionDate.getMonth() + 1}/${sessionDate.getDate()}`;
+  const title = group ? `${dateStr} ${group.name}` : `${dateStr} セッション`;
+  const rateLabel = RATE_LABELS[settings.rate] ?? `${settings.rate}円`;
+  const umaLabel = formatUma(settings.uma);
+  const subtitle = `${rateLabel} / ${umaLabel} / ${settings.startPoints * 1000}持ち`;
+
+  return (
+    <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
+      {/* ヘッダー */}
+      <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
+        <div>
+          <div className="text-lg font-bold">{title}</div>
+          <div className="text-xs opacity-80">{subtitle}</div>
+        </div>
+        <button
+          onClick={() => router.push("/")}
+          className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+        >
+          終了
+        </button>
+      </div>
+
+      {/* スコアテーブル */}
+      <ScoreTable
+        members={session.members}
+        rounds={roundScoresPerRound}
+        totals={totals}
+        money={money}
+      />
+
+      {/* ボタンエリア */}
+      <div className="mt-5 flex flex-col gap-3">
+        <button
+          onClick={() => setShowInputModal(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-900 py-4 text-base font-bold text-white hover:bg-green-800"
+        >
+          <span className="text-xl">+</span> 半荘を追加
+        </button>
+
+        <Link
+          href={`/session/${params.id}/settlement`}
+          className="block w-full rounded-xl bg-orange-500 py-4 text-center text-base font-bold text-white hover:bg-orange-600"
+        >
+          💰 精算を見る
+        </Link>
+      </div>
+
+      {/* 入力モーダル */}
+      {showInputModal && (
+        <AddRoundModal
+          members={session.members}
+          roundNumber={session.rounds.length + 1}
+          onSave={handleAddRound}
+          onClose={() => setShowInputModal(false)}
+        />
+      )}
+    </div>
+  );
+}
