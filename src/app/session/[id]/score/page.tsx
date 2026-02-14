@@ -38,11 +38,14 @@ export default function SessionPage() {
   const sessions = useAppStore((s) => s.sessions);
   const groups = useAppStore((s) => s.groups);
   const addRound = useAppStore((s) => s.addRound);
+  const updateRound = useAppStore((s) => s.updateRound);
+  const deleteRound = useAppStore((s) => s.deleteRound);
 
   const session = getSession(sessions, sessionId);
   const group = session ? getGroup(groups, session.groupId) : undefined;
 
   const [showInputModal, setShowInputModal] = useState(false);
+  const [editingRoundIndex, setEditingRoundIndex] = useState<number | null>(null);
 
   if (!hydrated) {
     return (
@@ -98,6 +101,20 @@ export default function SessionPage() {
     setShowInputModal(false);
   };
 
+  const handleEditRound = (rawScores: (number | null)[], tobi?: TobiInfo) => {
+    if (editingRoundIndex === null) return;
+    const round = session.rounds[editingRoundIndex];
+    updateRound(session.id, round.id, rawScores, tobi);
+    setEditingRoundIndex(null);
+  };
+
+  const handleDeleteRound = () => {
+    if (editingRoundIndex === null) return;
+    const round = session.rounds[editingRoundIndex];
+    deleteRound(session.id, round.id);
+    setEditingRoundIndex(null);
+  };
+
   const sessionDate = new Date(session.date);
   const dateStr = `${sessionDate.getMonth() + 1}/${sessionDate.getDate()}`;
   const title = group ? `${dateStr} ${group.name}` : `${dateStr} セッション`;
@@ -127,6 +144,7 @@ export default function SessionPage() {
         rounds={roundScoresPerRound}
         totals={totals}
         money={money}
+        onRoundTap={(i) => setEditingRoundIndex(i)}
       />
 
       {/* ボタンエリア */}
@@ -146,13 +164,27 @@ export default function SessionPage() {
         </Link>
       </div>
 
-      {/* 入力モーダル */}
+      {/* 新規入力モーダル */}
       {showInputModal && (
         <AddRoundModal
           members={session.members}
           roundNumber={session.rounds.length + 1}
           onSave={handleAddRound}
           onClose={() => setShowInputModal(false)}
+        />
+      )}
+
+      {/* 編集モーダル */}
+      {editingRoundIndex !== null && session.rounds[editingRoundIndex] && (
+        <AddRoundModal
+          key={`edit-${session.rounds[editingRoundIndex].id}`}
+          members={session.members}
+          roundNumber={editingRoundIndex + 1}
+          initialScores={session.rounds[editingRoundIndex].scores}
+          initialTobi={session.rounds[editingRoundIndex].tobi}
+          onSave={handleEditRound}
+          onClose={() => setEditingRoundIndex(null)}
+          onDelete={handleDeleteRound}
         />
       )}
     </div>

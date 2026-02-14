@@ -8,6 +8,12 @@ type Props = {
   roundNumber: number;
   onSave: (scores: (number | null)[], tobi?: TobiInfo) => void;
   onClose: () => void;
+  /** 編集モード用: 既存のスコア */
+  initialScores?: (number | null)[];
+  /** 編集モード用: 既存のトビ情報 */
+  initialTobi?: TobiInfo;
+  /** 編集モード用: 削除ハンドラ */
+  onDelete?: () => void;
 };
 
 const EXPECTED_TOTAL = 100000;
@@ -43,14 +49,30 @@ export function AddRoundModal({
   roundNumber,
   onSave,
   onClose,
+  initialScores,
+  initialTobi,
+  onDelete,
 }: Props) {
+  const isEditing = !!initialScores;
   const isFivePlayer = members.length === 5;
-  const [sitOutIndex, setSitOutIndex] = useState<number | null>(null);
-  const [scores, setScores] = useState<number[]>(
-    members.map(() => DEFAULT_SCORE)
+
+  // 初期値を算出
+  const initSitOut = initialScores
+    ? initialScores.findIndex((s) => s === null)
+    : -1;
+  const [sitOutIndex, setSitOutIndex] = useState<number | null>(
+    initSitOut >= 0 ? initSitOut : null
   );
-  const [tobiAttacker, setTobiAttacker] = useState<number | null>(null);
+  const [scores, setScores] = useState<number[]>(
+    initialScores
+      ? initialScores.map((s) => s ?? DEFAULT_SCORE)
+      : members.map(() => DEFAULT_SCORE)
+  );
+  const [tobiAttacker, setTobiAttacker] = useState<number | null>(
+    initialTobi?.attacker ?? null
+  );
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // 抜け番以外のスコアだけで合計・判定
   const activeScores = scores.filter((_, i) => !isFivePlayer || i !== sitOutIndex);
@@ -146,7 +168,7 @@ export function AddRoundModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-5">
         <h3 className="mb-4 text-center text-lg font-bold text-green-900">
-          {roundNumber}半荘目の結果
+          {isEditing ? `${roundNumber}半荘目を修正` : `${roundNumber}半荘目の結果`}
         </h3>
 
         {/* 抜け番選択（5人の場合のみ） */}
@@ -317,6 +339,40 @@ export function AddRoundModal({
           </div>
         )}
 
+        {/* 削除ボタン（編集モード時） */}
+        {isEditing && onDelete && (
+          <div className="mb-3">
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full rounded-lg border border-red-200 py-2 text-sm text-red-500 hover:bg-red-50"
+              >
+                この半荘を削除
+              </button>
+            ) : (
+              <div className="rounded-lg bg-red-50 p-3">
+                <p className="mb-2 text-center text-sm font-bold text-red-600">
+                  本当に削除しますか？
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 rounded-lg bg-gray-200 py-2 text-sm text-gray-700"
+                  >
+                    やめる
+                  </button>
+                  <button
+                    onClick={onDelete}
+                    className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-bold text-white"
+                  >
+                    削除する
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={handleClose}
@@ -328,7 +384,7 @@ export function AddRoundModal({
             onClick={handleSave}
             className="flex-1 rounded-lg bg-green-900 py-3 text-base font-bold text-white hover:bg-green-800"
           >
-            保存
+            {isEditing ? "更新" : "保存"}
           </button>
         </div>
       </div>

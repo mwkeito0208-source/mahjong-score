@@ -153,6 +153,22 @@ export async function syncAddRound(
   }
 }
 
+export async function syncUpdateRound(
+  roundId: string,
+  scores: (number | null)[],
+  tobi?: { victim: number; attacker: number }
+) {
+  try {
+    const { error } = await supabase
+      .from("rounds")
+      .update({ scores, tobi: tobi ?? null })
+      .eq("id", roundId);
+    if (error) throw error;
+  } catch (e) {
+    warn("syncUpdateRound", e);
+  }
+}
+
 export async function syncDeleteRound(roundId: string) {
   try {
     const { error } = await supabase

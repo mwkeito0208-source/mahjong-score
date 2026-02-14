@@ -5,9 +5,10 @@ type Props = {
   rounds: { id: string | number; scores: (number | null)[]; tobi?: TobiInfo }[];
   totals: number[];
   money: number[];
+  onRoundTap?: (roundIndex: number) => void;
 };
 
-export function ScoreTable({ members, rounds, totals, money }: Props) {
+export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props) {
   const cols = members.length + 1;
   const gridClass = cols === 5 ? "grid-cols-5" : "grid-cols-6";
 
@@ -29,7 +30,8 @@ export function ScoreTable({ members, rounds, totals, money }: Props) {
           key={round.id}
           className={`grid ${gridClass} border-b border-gray-200 ${
             roundIndex % 2 === 0 ? "bg-white" : "bg-gray-50"
-          }`}
+          } ${onRoundTap ? "cursor-pointer active:bg-blue-50" : ""}`}
+          onClick={() => onRoundTap?.(roundIndex)}
         >
           <div className="p-3 text-center font-bold text-gray-500">
             {roundIndex + 1}
