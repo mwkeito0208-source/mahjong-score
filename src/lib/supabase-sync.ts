@@ -93,6 +93,18 @@ export async function syncCreateSession(session: Session) {
   }
 }
 
+export async function syncDeleteSession(sessionId: string) {
+  try {
+    const { error } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("id", sessionId);
+    if (error) throw error;
+  } catch (e) {
+    warn("syncDeleteSession", e);
+  }
+}
+
 export async function syncSettleSession(sessionId: string) {
   try {
     const { error } = await supabase

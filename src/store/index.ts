@@ -14,6 +14,7 @@ import {
   syncUpdateGroup,
   syncDeleteGroup,
   syncCreateSession,
+  syncDeleteSession,
   syncAddRound,
   syncDeleteRound,
   syncUpdateChipCounts,
@@ -38,6 +39,7 @@ type Actions = {
     settings: SessionSettings;
     chipConfig: ChipConfig;
   }) => Session;
+  deleteSession: (sessionId: string) => void;
   addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo) => void;
   deleteRound: (sessionId: string, roundId: string) => void;
   updateChipCounts: (sessionId: string, counts: number[]) => void;
@@ -96,6 +98,13 @@ export const useAppStore = create<State & Actions>()(
         set((s) => ({ sessions: [session, ...s.sessions] }));
         syncCreateSession(session);
         return session;
+      },
+
+      deleteSession: (sessionId) => {
+        set((s) => ({
+          sessions: s.sessions.filter((ses) => ses.id !== sessionId),
+        }));
+        syncDeleteSession(sessionId);
       },
 
       addRound: (sessionId, scores, tobi) => {

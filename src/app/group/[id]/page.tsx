@@ -38,6 +38,7 @@ export default function GroupDetailPage() {
 
   const groups = useAppStore((s) => s.groups);
   const sessions = useAppStore((s) => s.sessions);
+  const deleteSession = useAppStore((s) => s.deleteSession);
 
   const group = getGroup(groups, groupId);
   const groupSessions = getGroupSessions(sessions, groupId);
@@ -171,6 +172,7 @@ export default function GroupDetailPage() {
               key={session.id}
               session={session}
               onClick={() => setSelectedSession(session)}
+              onDelete={(id) => deleteSession(String(id))}
             />
           ))
         ) : (
