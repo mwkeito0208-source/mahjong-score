@@ -7,6 +7,8 @@ import { ScoreTable } from "@/components/score/ScoreTable";
 import { AddRoundModal } from "@/components/score/AddRoundModal";
 import {
   roundScore,
+  getRanks,
+  calculateRoundScores,
   calculateTotals,
   calculateMoney,
   type TobiInfo,
@@ -90,11 +92,32 @@ export default function SessionPage() {
       : session.members.map(() => 0);
   const money = calculateMoney(totals, settings.rate);
 
-  const roundScoresPerRound = session.rounds.map((round) => ({
-    id: round.id,
-    scores: round.scores.map((score) => (score !== null ? roundScore(score) : null)),
-    tobi: round.tobi,
-  }));
+  const roundScoresPerRound = session.rounds.map((round) => {
+    const finalScores = calculateRoundScores(
+      round.scores,
+      settings.returnPoints,
+      settings.uma,
+      settings.tobiPenalty,
+      round.tobi,
+      settings.startPoints
+    );
+    // 順位: 五捨六入した素点から算出
+    const rounded = round.scores.map((s) => (s !== null ? roundScore(s) : null));
+    const activeRounded = rounded.filter((s): s is number => s !== null);
+    const activeRanks = getRanks(activeRounded);
+    let activeIdx = 0;
+    const ranks = rounded.map((s) => {
+      if (s === null) return null;
+      return activeRanks[activeIdx++];
+    });
+
+    return {
+      id: round.id,
+      scores: finalScores.map((s, i) => (round.scores[i] === null ? null : s)),
+      ranks,
+      tobi: round.tobi,
+    };
+  });
 
   const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo) => {
     addRound(session.id, rawScores, tobi);
