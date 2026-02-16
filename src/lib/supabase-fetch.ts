@@ -79,7 +79,7 @@ export async function fetchGroups(): Promise<Group[]> {
 export async function fetchSessions(): Promise<Session[]> {
   const { data: sessions, error: sErr } = await supabase
     .from("sessions")
-    .select("id, group_id, date, settings, status, chip_config, chip_counts")
+    .select("id, group_id, date, members, settings, status, chip_config, chip_counts")
     .order("date", { ascending: false });
 
   if (sErr) throw sErr;
@@ -148,8 +148,8 @@ export async function fetchSessions(): Promise<Session[]> {
     const settings = s.settings as SessionSettings;
     const chipConfig = s.chip_config as ChipConfig;
 
-    // メンバー: group の members を使う
-    const members = membersByGroup.get(s.group_id) ?? [];
+    // メンバー: セッションに保存されていればそれを使い、なければグループから取得
+    const members = (s.members as string[] | null) ?? membersByGroup.get(s.group_id) ?? [];
 
     return {
       id: s.id,

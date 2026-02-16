@@ -17,6 +17,7 @@ import {
 import { useAppStore } from "@/store";
 import { getSession, getGroup } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
+import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
 
 const RATE_LABELS: Record<number, string> = {
   0: "ノーレート",
@@ -35,6 +36,7 @@ export default function SessionPage() {
   const router = useRouter();
   const params = useParams();
   const hydrated = useHydration();
+  const synced = useSyncFromSupabase();
   const sessionId = params.id as string;
 
   const sessions = useAppStore((s) => s.sessions);
@@ -49,7 +51,7 @@ export default function SessionPage() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [editingRoundIndex, setEditingRoundIndex] = useState<number | null>(null);
 
-  if (!hydrated) {
+  if (!hydrated || (!session && !synced)) {
     return (
       <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
         <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">

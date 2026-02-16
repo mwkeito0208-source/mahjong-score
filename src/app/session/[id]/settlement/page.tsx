@@ -18,11 +18,13 @@ import { calculateTotals, calculateMoney, type RoundData } from "@/lib/score";
 import { useAppStore } from "@/store";
 import { getSession, getGroup } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
+import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
 
 export default function SettlementPage() {
   const router = useRouter();
   const params = useParams();
   const hydrated = useHydration();
+  const synced = useSyncFromSupabase();
   const sessionId = params.id as string;
 
   const sessions = useAppStore((s) => s.sessions);
@@ -38,7 +40,7 @@ export default function SettlementPage() {
   const [showChipInput, setShowChipInput] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (!hydrated) {
+  if (!hydrated || (!session && !synced)) {
     return (
       <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
         <div className="mb-4 flex items-center justify-between rounded-xl bg-orange-500 p-3 text-white">

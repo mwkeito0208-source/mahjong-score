@@ -82,6 +82,7 @@ export async function syncCreateSession(session: Session) {
       id: session.id,
       group_id: session.groupId,
       date: session.date,
+      members: session.members,
       settings: session.settings,
       status: session.status,
       chip_config: session.chipConfig,
