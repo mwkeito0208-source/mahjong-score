@@ -11,6 +11,7 @@ import { SessionDetailModal } from "@/components/group/SessionDetailModal";
 import { useAppStore } from "@/store";
 import { getGroup, getGroupSessions } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
+import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
 import {
   calculateTotals,
   calculateMoney,
@@ -34,6 +35,7 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const params = useParams();
   const hydrated = useHydration();
+  useSyncFromSupabase();
   const groupId = params.id as string;
 
   const groups = useAppStore((s) => s.groups);

@@ -50,6 +50,7 @@ type Actions = {
   updateExpense: (sessionId: string, expenseId: string, patch: Partial<Omit<Expense, "id">>) => void;
   removeExpense: (sessionId: string, expenseId: string) => void;
   settleSession: (sessionId: string) => void;
+  mergeRemoteData: (groups: Group[], sessions: Session[]) => void;
 };
 
 export const useAppStore = create<State & Actions>()(
@@ -224,6 +225,31 @@ export const useAppStore = create<State & Actions>()(
           ),
         }));
         syncSettleSession(sessionId);
+      },
+
+      mergeRemoteData: (remoteGroups, remoteSessions) => {
+        set((s) => {
+          const localGroupIds = new Set(s.groups.map((g) => g.id));
+          const newGroups = remoteGroups.filter((g) => !localGroupIds.has(g.id));
+          // Update existing groups with remote data (members may have changed)
+          const updatedGroups = s.groups.map((g) => {
+            const remote = remoteGroups.find((rg) => rg.id === g.id);
+            return remote ? { ...g, members: remote.members } : g;
+          });
+
+          const localSessionIds = new Set(s.sessions.map((ses) => ses.id));
+          const newSessions = remoteSessions.filter((ses) => !localSessionIds.has(ses.id));
+          // Update existing sessions with remote data (rounds/expenses may have changed)
+          const updatedSessions = s.sessions.map((ses) => {
+            const remote = remoteSessions.find((rs) => rs.id === ses.id);
+            return remote ?? ses;
+          });
+
+          return {
+            groups: [...updatedGroups, ...newGroups],
+            sessions: [...updatedSessions, ...newSessions],
+          };
+        });
       },
     }),
     {

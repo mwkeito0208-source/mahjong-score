@@ -8,10 +8,12 @@ import { InviteLinkModal } from "@/components/InviteLinkModal";
 import { useAppStore } from "@/store";
 import { getGroupSummary } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
+import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
 import type { Group } from "@/lib/types";
 
 export default function Home() {
   const hydrated = useHydration();
+  useSyncFromSupabase();
   const groups = useAppStore((s) => s.groups);
   const sessions = useAppStore((s) => s.sessions);
   const addGroup = useAppStore((s) => s.addGroup);
