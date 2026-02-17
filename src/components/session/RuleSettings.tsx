@@ -7,10 +7,10 @@ type Props = {
 
 const RATE_OPTIONS = [
   { value: "norate", label: "ノーレート" },
-  { value: "tengo", label: "テンゴ (1000点=50円)" },
-  { value: "tenpin", label: "テンピン (1000点=100円)" },
-  { value: "ten2", label: "点2 (1000点=200円)" },
-  { value: "ten5", label: "点5 (1000点=500円)" },
+  { value: "tengo", label: "テンゴ (1000点=50pt)" },
+  { value: "tenpin", label: "テンピン (1000点=100pt)" },
+  { value: "ten2", label: "点2 (1000点=200pt)" },
+  { value: "ten5", label: "点5 (1000点=500pt)" },
 ];
 
 const UMA_OPTIONS = [

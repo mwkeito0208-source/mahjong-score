@@ -51,7 +51,7 @@ export function ChipSettings({ chipSettings, onUpdate }: Props) {
                   : "bg-gray-100 text-gray-700"
               }`}
             >
-              {price}円
+              {price}pt
             </button>
           ))}
         </div>

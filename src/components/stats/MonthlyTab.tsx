@@ -24,7 +24,7 @@ export function MonthlyTab({ data }: Props) {
               className={`text-xl font-bold ${month.balance >= 0 ? "text-green-600" : "text-red-600"}`}
             >
               {month.balance >= 0 ? "+" : ""}
-              {month.balance.toLocaleString()}円
+              {month.balance.toLocaleString()}pt
             </div>
           </div>
         </div>

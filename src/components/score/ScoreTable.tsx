@@ -152,7 +152,7 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
             }`}
           >
             {m >= 0 ? "+" : ""}
-            {m.toLocaleString()}円
+            {m.toLocaleString()}pt
           </div>
         ))}
       </div>

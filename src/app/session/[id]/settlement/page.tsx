@@ -180,7 +180,7 @@ export default function SettlementPage() {
           icon="🎰"
           members={members}
           balances={chipBalances}
-          subtitle={`(${chipConfig.startChips}枚スタート / ${chipConfig.pricePerChip}円)`}
+          subtitle={`(${chipConfig.startChips}枚スタート / ${chipConfig.pricePerChip}pt)`}
           extra={(i) => (
             <span className="text-xs text-gray-400">
               ({session.chipCounts[i]}枚 /{" "}

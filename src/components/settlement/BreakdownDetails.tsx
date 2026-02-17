@@ -36,7 +36,7 @@ export function BreakdownDetails({
                 <span
                   className={`font-bold ${finalBalances[i] >= 0 ? "text-green-600" : "text-red-600"}`}
                 >
-                  {fmt(finalBalances[i])}円
+                  {fmt(finalBalances[i])}pt
                 </span>
                 <div className="text-xs text-gray-400">
                   麻雀{fmt(mahjongBalances[i])}

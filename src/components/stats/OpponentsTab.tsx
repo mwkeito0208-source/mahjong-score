@@ -36,7 +36,7 @@ export function OpponentsTab({ data }: Props) {
               className={`text-lg font-bold ${opponent.balance >= 0 ? "text-green-600" : "text-red-600"}`}
             >
               {opponent.balance >= 0 ? "+" : ""}
-              {opponent.balance.toLocaleString()}円
+              {opponent.balance.toLocaleString()}pt
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">

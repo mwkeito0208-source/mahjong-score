@@ -66,7 +66,7 @@ export function GroupsTab({ data }: Props) {
                     className={`text-lg font-bold ${group.balance >= 0 ? "text-green-600" : "text-red-600"}`}
                   >
                     {group.balance >= 0 ? "+" : ""}
-                    {group.balance.toLocaleString()}円
+                    {group.balance.toLocaleString()}pt
                   </div>
                   <span className="text-gray-400">{isOpen ? "▲" : "▼"}</span>
                 </div>
@@ -115,7 +115,7 @@ export function GroupsTab({ data }: Props) {
                               className={`font-bold ${member.balance >= 0 ? "text-green-600" : "text-red-600"}`}
                             >
                               {member.balance >= 0 ? "+" : ""}
-                              {member.balance.toLocaleString()}円
+                              {member.balance.toLocaleString()}pt
                             </span>
                           </div>
                         </div>

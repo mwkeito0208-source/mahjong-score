@@ -103,7 +103,7 @@ export default function GroupDetailPage() {
     const d = new Date(ses.date);
     const dateStr = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 
-    const rateLabel = RATE_LABELS[ses.settings.rate] ?? `${ses.settings.rate}円`;
+    const rateLabel = RATE_LABELS[ses.settings.rate] ?? `${ses.settings.rate}pt`;
     const umaLabel = formatUma(ses.settings.uma);
 
     return {

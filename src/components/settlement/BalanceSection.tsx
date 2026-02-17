@@ -9,7 +9,7 @@ type Props = {
 };
 
 function formatYen(value: number): string {
-  return `${value >= 0 ? "+" : ""}${value.toLocaleString()}円`;
+  return `${value >= 0 ? "+" : ""}${value.toLocaleString()}pt`;
 }
 
 export function BalanceSection({

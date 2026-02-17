@@ -84,7 +84,7 @@ export function SessionDetailModal({ session, onClose }: Props) {
                       className={`font-bold ${result.money >= 0 ? "text-green-600" : "text-red-600"}`}
                     >
                       {result.money >= 0 ? "+" : ""}
-                      {result.money.toLocaleString()}円
+                      {result.money.toLocaleString()}pt
                     </div>
                     <div className="text-xs text-gray-400">
                       ({result.score >= 0 ? "+" : ""}

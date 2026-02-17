@@ -7,10 +7,10 @@ type Props = {
 
 const RATE_LABELS: Record<string, string> = {
   norate: "ノーレート",
-  tengo: "テンゴ (1000点=50円)",
-  tenpin: "テンピン (1000点=100円)",
-  ten2: "点2 (1000点=200円)",
-  ten5: "点5 (1000点=500円)",
+  tengo: "テンゴ (1000点=50pt)",
+  tenpin: "テンピン (1000点=100pt)",
+  ten2: "点2 (1000点=200pt)",
+  ten5: "点5 (1000点=500pt)",
 };
 
 const UMA_LABELS: Record<string, string> = {
@@ -38,7 +38,7 @@ export function SettingsSummary({ settings, chipSettings }: Props) {
         {settings.chip && (
           <div>
             チップ: {chipSettings.startChips}枚スタート /{" "}
-            {chipSettings.pricePerChip}円/枚
+            {chipSettings.pricePerChip}pt/枚
           </div>
         )}
       </div>

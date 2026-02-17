@@ -32,7 +32,7 @@ export function SettlementList({
                   <span className="font-medium">{s.to}</span>
                 </div>
                 <span className="text-lg font-bold">
-                  {s.amount.toLocaleString()}円
+                  {s.amount.toLocaleString()}pt
                 </span>
               </div>
             ))}
@@ -62,7 +62,7 @@ export function SettlementList({
                 <span className="font-medium text-gray-700">{s.to}</span>
               </div>
               <span className="font-bold text-orange-600">
-                {s.amount.toLocaleString()}円
+                {s.amount.toLocaleString()}pt
               </span>
             </div>
           ))}

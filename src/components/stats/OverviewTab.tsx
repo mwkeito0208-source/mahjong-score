@@ -39,7 +39,7 @@ export function OverviewTab({ stats }: Props) {
         <div className="mb-1 text-sm opacity-80">通算収支</div>
         <div className="text-3xl font-bold">
           {stats.totalBalance >= 0 ? "+" : ""}
-          {stats.totalBalance.toLocaleString()}円
+          {stats.totalBalance.toLocaleString()}pt
         </div>
         <div className="mt-2 text-sm opacity-80">
           {stats.totalSessions}セッション / {stats.totalRounds}半荘

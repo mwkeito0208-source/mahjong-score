@@ -107,7 +107,7 @@ export function generateShareText(
   text += "【最終精算】\n";
   if (finalSettlements.length > 0) {
     for (const s of finalSettlements) {
-      text += `${s.from} → ${s.to}  ${s.amount.toLocaleString()}円\n`;
+      text += `${s.from} → ${s.to}  ${s.amount.toLocaleString()}pt\n`;
     }
   } else {
     text += "精算なし\n";
@@ -119,7 +119,7 @@ export function generateShareText(
     const mSign = mahjongBalances[i] >= 0 ? "+" : "";
     const cSign = chipBalances[i] >= 0 ? "+" : "";
     const eSign = expenseBalances[i] >= 0 ? "+" : "";
-    text += `${members[i]}: ${sign}${finalBalances[i].toLocaleString()}円`;
+    text += `${members[i]}: ${sign}${finalBalances[i].toLocaleString()}pt`;
     if (chipEnabled) {
       text += ` (麻雀${mSign}${mahjongBalances[i].toLocaleString()} / チップ${cSign}${chipBalances[i].toLocaleString()} / 費用${eSign}${expenseBalances[i].toLocaleString()})`;
     } else {

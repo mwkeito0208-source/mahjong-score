@@ -121,7 +121,7 @@ export function ExpenseSection({
                 </button>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">
-                    {expense.amount.toLocaleString()}円
+                    {expense.amount.toLocaleString()}pt
                   </span>
                   <button
                     type="button"
@@ -142,7 +142,7 @@ export function ExpenseSection({
           <div className="rounded-lg bg-gray-50 p-3 text-center">
             <span className="text-gray-500">割り勘 1人あたり: </span>
             <span className="font-bold text-gray-700">
-              {perPersonExpense.toLocaleString()}円
+              {perPersonExpense.toLocaleString()}pt
             </span>
           </div>
         )}

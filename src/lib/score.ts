@@ -123,7 +123,7 @@ export function calculateTotals(
   return totals;
 }
 
-/** スコアから収支（円）を計算 */
+/** スコアから収支（pt）を計算 */
 export function calculateMoney(
   totals: number[],
   ratePerPoint: number = 100

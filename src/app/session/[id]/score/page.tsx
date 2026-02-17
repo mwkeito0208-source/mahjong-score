@@ -143,7 +143,7 @@ export default function SessionPage() {
   const sessionDate = new Date(session.date);
   const dateStr = `${sessionDate.getMonth() + 1}/${sessionDate.getDate()}`;
   const title = group ? `${dateStr} ${group.name}` : `${dateStr} セッション`;
-  const rateLabel = RATE_LABELS[settings.rate] ?? `${settings.rate}円`;
+  const rateLabel = RATE_LABELS[settings.rate] ?? `${settings.rate}pt`;
   const umaLabel = formatUma(settings.uma);
   const subtitle = `${rateLabel} / ${umaLabel} / ${settings.startPoints * 1000}持ち`;
 
