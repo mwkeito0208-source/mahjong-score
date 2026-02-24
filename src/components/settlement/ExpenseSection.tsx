@@ -82,7 +82,7 @@ export function ExpenseSection({
 
   const formatExpenseLabel = (expense: Expense) => {
     if (expense.type === "individual" && expense.forMembers && expense.forMembers.length > 0) {
-      return `(${expense.paidBy}が${expense.forMembers.join(",")}の分を支払い)`;
+      return `(${expense.paidBy}が${expense.forMembers.join("、")}の分を支払い)`;
     }
     return `(${expense.paidBy}が立替)`;
   };

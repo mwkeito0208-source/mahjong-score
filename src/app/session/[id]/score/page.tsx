@@ -156,7 +156,7 @@ export default function SessionPage() {
           <div className="text-xs opacity-80">{subtitle}</div>
         </div>
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push(group ? `/group/${group.id}` : "/")}
           className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
         >
           終了

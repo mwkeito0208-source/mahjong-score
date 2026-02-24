@@ -38,10 +38,10 @@ export function BreakdownDetails({
                 >
                   {fmt(finalBalances[i])}pt
                 </span>
-                <div className="text-xs text-gray-400">
-                  麻雀{fmt(mahjongBalances[i])}
-                  {chipEnabled && <> / チップ{fmt(chipBalances[i])}</>}
-                  {" "}/ 費用{fmt(expenseBalances[i])}
+                <div className="mt-0.5 space-x-2 text-xs text-gray-400">
+                  <span>麻雀{fmt(mahjongBalances[i])}</span>
+                  {chipEnabled && <span>チップ{fmt(chipBalances[i])}</span>}
+                  <span>費用{fmt(expenseBalances[i])}</span>
                 </div>
               </div>
             </div>

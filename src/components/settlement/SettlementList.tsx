@@ -38,7 +38,7 @@ export function SettlementList({
             ))}
           </div>
         ) : (
-          <p className="py-2 text-center opacity-80">精算なし</p>
+          <p className="py-2 text-center opacity-80">✓ 精算なし</p>
         )}
       </div>
     );
@@ -68,7 +68,7 @@ export function SettlementList({
           ))}
         </div>
       ) : (
-        <p className="py-2 text-center text-gray-500">精算なし</p>
+        <p className="py-2 text-center text-gray-500">✓ 精算なし</p>
       )}
     </div>
   );
