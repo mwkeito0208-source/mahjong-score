@@ -146,10 +146,11 @@ export function calcOverview(
     totalBalance += balances[myIdx];
 
     for (const round of session.rounds) {
-      totalRounds++;
       const ranks = roundRanks(round.scores);
       const myRank = ranks[myIdx];
       if (myRank !== null) {
+        // 自分が参加したラウンドのみカウント（5人回しの抜け番は除外）
+        totalRounds++;
         rankSum += myRank;
         rankCount++;
         if (myRank >= 1 && myRank <= 4) {

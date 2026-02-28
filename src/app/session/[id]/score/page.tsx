@@ -196,6 +196,11 @@ export default function SessionPage() {
           roundNumber={session.rounds.length + 1}
           onSave={handleAddRound}
           onClose={() => setShowInputModal(false)}
+          lastSitOutIndex={(() => {
+            if (session.members.length !== 5 || session.rounds.length === 0) return null;
+            const idx = session.rounds[session.rounds.length - 1].scores.findIndex((s) => s === null);
+            return idx >= 0 ? idx : null;
+          })()}
         />
       )}
 

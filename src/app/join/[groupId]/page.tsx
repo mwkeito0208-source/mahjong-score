@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { fetchGroup, addMemberToGroup } from "@/lib/supabase-fetch";
+import { fetchGroup, addMemberToGroup, fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
 import { useAppStore } from "@/store";
 import { useHydration } from "@/store/useHydration";
 import type { Group } from "@/lib/types";
@@ -14,6 +14,7 @@ export default function JoinGroupPage() {
   const groupId = params.groupId as string;
 
   const importGroup = useAppStore((s) => s.importGroup);
+  const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
   const groups = useAppStore((s) => s.groups);
 
   const [group, setGroup] = useState<Group | null>(null);
@@ -23,6 +24,19 @@ export default function JoinGroupPage() {
   const [name, setName] = useState("");
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
+
+  /** Supabaseから全データを取得してローカルストアに同期 */
+  const syncAllData = async () => {
+    try {
+      const [remoteGroups, remoteSessions] = await Promise.all([
+        fetchGroups(),
+        fetchSessions(),
+      ]);
+      mergeRemoteData(remoteGroups, remoteSessions);
+    } catch {
+      // 同期失敗しても呼び出し元の処理は継続
+    }
+  };
 
   // グループ情報を取得
   useEffect(() => {
@@ -54,8 +68,9 @@ export default function JoinGroupPage() {
     if (group.members.includes(trimmedName)) {
       // 名前が一致 → ローカルに取り込んでリダイレクト
       importGroup(group);
+      await syncAllData();
       setJoined(true);
-      setTimeout(() => router.push(`/group/${group.id}`), 500);
+      setTimeout(() => router.push(`/group/${group.id}`), 1000);
       return;
     }
 
@@ -69,9 +84,10 @@ export default function JoinGroupPage() {
         members: [...group.members, trimmedName],
       };
       importGroup(updatedGroup);
+      await syncAllData();
 
       setJoined(true);
-      setTimeout(() => router.push(`/group/${group.id}`), 500);
+      setTimeout(() => router.push(`/group/${group.id}`), 1000);
     } catch {
       setError("参加に失敗しました。もう一度お試しください。");
       setJoining(false);
@@ -159,7 +175,10 @@ export default function JoinGroupPage() {
             このグループは既に登録されています
           </p>
           <button
-            onClick={() => router.push(`/group/${group.id}`)}
+            onClick={async () => {
+              await syncAllData();
+              router.push(`/group/${group.id}`);
+            }}
             className="rounded-lg bg-green-600 px-6 py-3 font-bold text-white hover:bg-green-700"
           >
             グループページへ

@@ -37,7 +37,12 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
 
   // 順位分布を計算（メンバーごとに[1着,2着,3着,4着]）
   const rankDist = members.map(() => [0, 0, 0, 0]);
+  // 参加半荘数を計算（5人回しで抜け番があるメンバー用）
+  const playedRounds = members.map(() => 0);
   for (const round of rounds) {
+    round.scores.forEach((score, i) => {
+      if (score !== null) playedRounds[i]++;
+    });
     if (!round.ranks) continue;
     round.ranks.forEach((rank, i) => {
       if (rank !== null && rank >= 1 && rank <= 4) {
@@ -45,6 +50,7 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
       }
     });
   }
+  const isFivePlayer = members.length === 5;
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-lg">
@@ -60,12 +66,26 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
 
       {/* 順位分布 */}
       {rounds.length > 0 && (
-        <div className={`grid ${gridClass} border-b-2 border-green-800 bg-green-50`}>
+        <div className={`grid ${gridClass} ${isFivePlayer ? "" : "border-b-2 border-green-800"} bg-green-50`}>
           <div className="p-2 text-center text-xs text-gray-500">順位</div>
           {rankDist.map((dist, i) => (
             <div key={i} className="p-2 text-center">
               <span className="font-mono text-xs font-bold tabular-nums text-gray-700">
                 {dist.join("-")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 参加半荘数（5人回しの場合のみ） */}
+      {isFivePlayer && rounds.length > 0 && (
+        <div className={`grid ${gridClass} border-b-2 border-green-800 bg-green-50`}>
+          <div className="p-2 text-center text-xs text-gray-500">参加</div>
+          {playedRounds.map((count, i) => (
+            <div key={i} className="p-2 text-center">
+              <span className="text-xs font-bold text-gray-600">
+                {count}/{rounds.length}
               </span>
             </div>
           ))}

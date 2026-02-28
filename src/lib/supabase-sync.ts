@@ -96,6 +96,19 @@ export async function syncCreateSession(session: Session) {
 
 export async function syncDeleteSession(sessionId: string) {
   try {
+    // 関連する rounds と expenses を先に削除（CASCADE未設定の場合に備える）
+    // 各ステップが失敗してもセッション本体の削除は試行する
+    try {
+      await supabase.from("rounds").delete().eq("session_id", sessionId);
+    } catch (e) {
+      warn("syncDeleteSession:rounds", e);
+    }
+    try {
+      await supabase.from("expenses").delete().eq("session_id", sessionId);
+    } catch (e) {
+      warn("syncDeleteSession:expenses", e);
+    }
+
     const { error } = await supabase
       .from("sessions")
       .delete()

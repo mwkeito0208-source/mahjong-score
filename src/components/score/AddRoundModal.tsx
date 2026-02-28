@@ -14,6 +14,8 @@ type Props = {
   initialTobi?: TobiInfo;
   /** 編集モード用: 削除ハンドラ */
   onDelete?: () => void;
+  /** 前回の抜け番インデックス（5人回しローテーション用） */
+  lastSitOutIndex?: number | null;
 };
 
 const EXPECTED_TOTAL = 100000;
@@ -52,16 +54,21 @@ export function AddRoundModal({
   initialScores,
   initialTobi,
   onDelete,
+  lastSitOutIndex,
 }: Props) {
   const isEditing = !!initialScores;
   const isFivePlayer = members.length === 5;
 
-  // 初期値を算出
+  // 初期値を算出（編集時は既存の抜け番、新規時は前回の次の人をローテーション）
   const initSitOut = initialScores
     ? initialScores.findIndex((s) => s === null)
     : -1;
+  const autoSitOut =
+    isFivePlayer && !isEditing && lastSitOutIndex !== undefined && lastSitOutIndex !== null
+      ? (lastSitOutIndex + 1) % members.length
+      : null;
   const [sitOutIndex, setSitOutIndex] = useState<number | null>(
-    initSitOut >= 0 ? initSitOut : null
+    initSitOut >= 0 ? initSitOut : autoSitOut
   );
   const [scores, setScores] = useState<number[]>(
     initialScores
