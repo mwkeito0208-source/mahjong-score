@@ -201,6 +201,7 @@ export default function SessionPage() {
             const idx = session.rounds[session.rounds.length - 1].scores.findIndex((s) => s === null);
             return idx >= 0 ? idx : null;
           })()}
+          startPoints={settings.startPoints}
         />
       )}
 
@@ -215,6 +216,7 @@ export default function SessionPage() {
           onSave={handleEditRound}
           onClose={() => setEditingRoundIndex(null)}
           onDelete={handleDeleteRound}
+          startPoints={settings.startPoints}
         />
       )}
     </div>

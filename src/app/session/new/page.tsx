@@ -33,12 +33,20 @@ const RATE_MAP: Record<string, number> = {
   ten5: 500,
 };
 
-const UMA_MAP: Record<string, number[]> = {
+const UMA_MAP_4: Record<string, number[]> = {
   none: [0, 0, 0, 0],
   "5-10": [10, 5, -5, -10],
   "10-20": [20, 10, -10, -20],
   "10-30": [30, 10, -10, -30],
   "20-30": [30, 20, -20, -30],
+};
+
+const UMA_MAP_3: Record<string, number[]> = {
+  none: [0, 0, 0],
+  "5-10": [10, 0, -10],
+  "10-20": [20, 0, -20],
+  "10-30": [30, 0, -30],
+  "20-30": [30, -10, -20],
 };
 
 export default function NewSessionPage() {
@@ -113,7 +121,9 @@ function NewSessionContent() {
     setChipSettings((prev) => ({ ...prev, ...patch }));
   };
 
-  const canStart = selectedMembers.length >= 4 && selectedMembers.length <= 5;
+  const canStart = selectedMembers.length >= 3 && selectedMembers.length <= 5;
+  const isThreePlayer = selectedMembers.length === 3;
+  const umaMap = isThreePlayer ? UMA_MAP_3 : UMA_MAP_4;
 
   const handleStart = () => {
     if (!canStart) return;
@@ -131,7 +141,7 @@ function NewSessionContent() {
       members: selectedMembers,
       settings: {
         rate: RATE_MAP[settings.rate] ?? 100,
-        uma: UMA_MAP[settings.uma] ?? [30, 10, -10, -30],
+        uma: umaMap[settings.uma] ?? (isThreePlayer ? [30, 0, -30] : [30, 10, -10, -30]),
         startPoints: parseInt(settings.startPoints) / 1000,
         returnPoints: parseInt(settings.returnPoints) / 1000,
         tobi: settings.tobi,
@@ -184,7 +194,7 @@ function NewSessionContent() {
       />
 
       {/* ルール設定 */}
-      <RuleSettings settings={settings} onUpdate={updateSettings} />
+      <RuleSettings settings={settings} onUpdate={updateSettings} playerCount={selectedMembers.length} />
 
       {/* チップ詳細設定 */}
       {settings.chip && (
@@ -209,7 +219,7 @@ function NewSessionContent() {
       >
         {canStart
           ? `🀄 ${selectedMembers.length}人で開始！`
-          : `メンバーを${4 - selectedMembers.length > 0 ? `あと${4 - selectedMembers.length}人` : "4〜5人"}選択してください`}
+          : `メンバーを${3 - selectedMembers.length > 0 ? `あと${3 - selectedMembers.length}人` : "3〜5人"}選択してください`}
       </button>
 
       {/* 新規メンバー追加モーダル */}

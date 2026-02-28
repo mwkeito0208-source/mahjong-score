@@ -21,7 +21,7 @@ export function MemberSelector({
         <h3 className="text-base font-bold text-gray-700">
           👥 メンバー選択
           <span className="ml-2 text-sm font-normal text-gray-500">
-            ({selectedMembers.length}/4〜5人)
+            ({selectedMembers.length}/3〜5人)
           </span>
         </h3>
         <button

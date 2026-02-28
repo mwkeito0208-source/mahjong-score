@@ -3,6 +3,7 @@ import type { SessionSettings } from "@/app/session/new/page";
 type Props = {
   settings: SessionSettings;
   onUpdate: (patch: Partial<SessionSettings>) => void;
+  playerCount?: number;
 };
 
 const RATE_OPTIONS = [
@@ -13,12 +14,20 @@ const RATE_OPTIONS = [
   { value: "ten5", label: "点5 (1000点=500pt)" },
 ];
 
-const UMA_OPTIONS = [
+const UMA_OPTIONS_4 = [
   { value: "none", label: "ナシ" },
   { value: "5-10", label: "5-10 (ゴットー)" },
   { value: "10-20", label: "10-20 (ワンツー)" },
   { value: "10-30", label: "10-30 (ワンスリー)" },
   { value: "20-30", label: "20-30 (ツースリー)" },
+];
+
+const UMA_OPTIONS_3 = [
+  { value: "none", label: "ナシ" },
+  { value: "5-10", label: "10 (1位+10/3位-10)" },
+  { value: "10-20", label: "20 (1位+20/3位-20)" },
+  { value: "10-30", label: "30 (1位+30/3位-30)" },
+  { value: "20-30", label: "20-30 (1位+30/3位-20)" },
 ];
 
 const POINT_OPTIONS = [
@@ -31,7 +40,9 @@ const RETURN_OPTIONS = [
   { value: "40000", label: "40,000点" },
 ];
 
-export function RuleSettings({ settings, onUpdate }: Props) {
+export function RuleSettings({ settings, onUpdate, playerCount = 4 }: Props) {
+  const umaOptions = playerCount === 3 ? UMA_OPTIONS_3 : UMA_OPTIONS_4;
+
   return (
     <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
       <h3 className="mb-3 text-base font-bold text-gray-700">⚙️ ルール設定</h3>
@@ -64,7 +75,7 @@ export function RuleSettings({ settings, onUpdate }: Props) {
           ウマ
         </label>
         <div className="grid grid-cols-2 gap-2">
-          {UMA_OPTIONS.map((option) => (
+          {umaOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => onUpdate({ uma: option.value })}

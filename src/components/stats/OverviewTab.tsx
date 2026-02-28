@@ -1,18 +1,7 @@
-type MyStats = {
-  totalSessions: number;
-  totalRounds: number;
-  totalBalance: number;
-  avgRank: number;
-  firstPlace: number;
-  secondPlace: number;
-  thirdPlace: number;
-  fourthPlace: number;
-  tobi: number;
-  tobiRate: number;
-};
+import type { OverviewStats } from "@/lib/stats-calc";
 
 type Props = {
-  stats: MyStats;
+  stats: OverviewStats;
 };
 
 function getRankColor(rank: number): string {
@@ -21,16 +10,15 @@ function getRankColor(rank: number): string {
   return "text-red-600";
 }
 
-const RANK_BARS = [
-  { key: "firstPlace" as const, rank: 1, color: "bg-yellow-400" },
-  { key: "secondPlace" as const, rank: 2, color: "bg-gray-300" },
-  { key: "thirdPlace" as const, rank: 3, color: "bg-orange-300" },
-  { key: "fourthPlace" as const, rank: 4, color: "bg-gray-200" },
+const RANK_COLORS = [
+  "bg-yellow-400",  // 1位
+  "bg-gray-300",    // 2位
+  "bg-orange-300",  // 3位
+  "bg-gray-200",    // 4位
 ];
 
 export function OverviewTab({ stats }: Props) {
-  const totalGames =
-    stats.firstPlace + stats.secondPlace + stats.thirdPlace + stats.fourthPlace;
+  const totalGames = stats.rankCounts.reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-4">
@@ -63,17 +51,18 @@ export function OverviewTab({ stats }: Props) {
       <div className="rounded-xl bg-white p-4 shadow-md">
         <div className="mb-3 text-sm text-gray-500">順位分布</div>
         <div className="space-y-2">
-          {RANK_BARS.map((item) => {
-            const count = stats[item.key];
-            const percent = ((count / totalGames) * 100).toFixed(1);
+          {stats.rankCounts.map((count, i) => {
+            const percent = totalGames > 0
+              ? ((count / totalGames) * 100).toFixed(1)
+              : "0.0";
             return (
-              <div key={item.rank} className="flex items-center gap-3">
+              <div key={i} className="flex items-center gap-3">
                 <span className="w-8 text-sm text-gray-600">
-                  {item.rank}位
+                  {i + 1}位
                 </span>
                 <div className="h-6 flex-1 overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className={`h-full ${item.color} rounded-full`}
+                    className={`h-full ${RANK_COLORS[i] ?? "bg-gray-200"} rounded-full`}
                     style={{ width: `${percent}%` }}
                   />
                 </div>

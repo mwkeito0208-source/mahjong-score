@@ -8,7 +8,7 @@ export type MemberStat = {
   name: string;
   balance: number;
   avgRank: number;
-  rankCounts: [number, number, number, number]; // 1位〜4位の回数
+  rankCounts: number[];
 };
 
 export type GroupStat = {
@@ -16,7 +16,7 @@ export type GroupStat = {
   sessions: number;
   balance: number;
   avgRank: number;
-  rankCounts: [number, number, number, number]; // 1位〜4位の回数
+  rankCounts: number[];
   memberRanking: MemberStat[];
   /** メンバー別のセッション収支履歴 */
   sessionHistory: {

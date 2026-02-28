@@ -16,10 +16,10 @@ type Props = {
   onDelete?: () => void;
   /** 前回の抜け番インデックス（5人回しローテーション用） */
   lastSitOutIndex?: number | null;
+  /** 持ち点（千点単位、例: 25 = 25000点） */
+  startPoints?: number;
 };
 
-const EXPECTED_TOTAL = 100000;
-const DEFAULT_SCORE = 25000;
 const STEPS = [10000, 1000, 100] as const;
 
 const RANK_BADGE = [
@@ -55,9 +55,11 @@ export function AddRoundModal({
   initialTobi,
   onDelete,
   lastSitOutIndex,
+  startPoints = 25,
 }: Props) {
   const isEditing = !!initialScores;
   const isFivePlayer = members.length === 5;
+  const defaultScore = startPoints * 1000;
 
   // 初期値を算出（編集時は既存の抜け番、新規時は前回の次の人をローテーション）
   const initSitOut = initialScores
@@ -72,8 +74,8 @@ export function AddRoundModal({
   );
   const [scores, setScores] = useState<number[]>(
     initialScores
-      ? initialScores.map((s) => s ?? DEFAULT_SCORE)
-      : members.map(() => DEFAULT_SCORE)
+      ? initialScores.map((s) => s ?? defaultScore)
+      : members.map(() => defaultScore)
   );
   const [tobiAttacker, setTobiAttacker] = useState<number | null>(
     initialTobi?.attacker ?? null
@@ -86,9 +88,11 @@ export function AddRoundModal({
 
   // 抜け番以外のスコアだけで合計・判定
   const activeScores = scores.filter((_, i) => !isFivePlayer || i !== sitOutIndex);
+  const activePlayerCount = isFivePlayer ? 4 : members.length;
+  const expectedTotal = defaultScore * activePlayerCount;
   const total = activeScores.reduce((a, b) => a + b, 0);
-  const diff = EXPECTED_TOTAL - total;
-  const isComplete = total === EXPECTED_TOTAL;
+  const diff = expectedTotal - total;
+  const isComplete = total === expectedTotal;
   const ranks = getRanks(activeScores);
   // activeScoresの順位をmembers全体に展開
   const fullRanks = useMemo(() => {
@@ -156,11 +160,11 @@ export function AddRoundModal({
     (index: number) => {
       setSitOutIndex((prev) => (prev === index ? null : index));
       // 抜け番変更時にスコアをリセット
-      setScores(members.map(() => DEFAULT_SCORE));
+      setScores(members.map(() => defaultScore));
       setTobiAttacker(null);
       setError("");
     },
-    [members]
+    [members, defaultScore]
   );
 
   const handleSave = () => {
@@ -169,7 +173,7 @@ export function AddRoundModal({
       return;
     }
     if (!isComplete) {
-      setError(`合計が${total.toLocaleString()}点です（100,000点必要）`);
+      setError(`合計が${total.toLocaleString()}点です（${expectedTotal.toLocaleString()}点必要）`);
       return;
     }
     if (hasTobi && effectiveAttacker === null) {
@@ -190,7 +194,7 @@ export function AddRoundModal({
   };
 
   const handleClose = () => {
-    setScores(members.map(() => DEFAULT_SCORE));
+    setScores(members.map(() => defaultScore));
     setSitOutIndex(null);
     setTobiAttacker(null);
     setError("");
@@ -367,7 +371,7 @@ export function AddRoundModal({
         {/* 合計表示 */}
         <div className="mb-4 mt-4 rounded-lg bg-gray-100 p-3">
           <div className="text-center">
-            <span className="text-gray-600">合計{isFivePlayer ? "(4人分)" : ""}: </span>
+            <span className="text-gray-600">合計{isFivePlayer ? `(${activePlayerCount}人分)` : ""}: </span>
             <span
               className={`font-bold ${isComplete ? "text-green-700" : "text-red-700"}`}
             >

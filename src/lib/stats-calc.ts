@@ -15,10 +15,8 @@ export type OverviewStats = {
   totalRounds: number;
   totalBalance: number;
   avgRank: number;
-  firstPlace: number;
-  secondPlace: number;
-  thirdPlace: number;
-  fourthPlace: number;
+  /** 順位別回数（可変長: 3人打ちは[1着,2着,3着]、4人打ちは[1着,2着,3着,4着]） */
+  rankCounts: number[];
   tobi: number;
   tobiRate: number;
 };
@@ -135,8 +133,10 @@ export function calcOverview(
   let totalRounds = 0;
   let rankSum = 0;
   let rankCount = 0;
-  const rankCounts = [0, 0, 0, 0]; // 1位〜4位
+  // 最大4位まで（3人打ちの場合は3位まで使用）
+  const rankCounts = [0, 0, 0, 0];
   let tobiCount = 0;
+  let maxRankSlots = 0; // 実際に使われた最大順位数
 
   const mySessions = sessions.filter((s) => s.members.includes(myName));
 
@@ -145,11 +145,14 @@ export function calcOverview(
     const balances = sessionFinalBalances(session);
     totalBalance += balances[myIdx];
 
+    // セッションの実際の対局人数を計算（5人回しは4人対局）
+    const activeCount = session.members.length === 5 ? 4 : session.members.length;
+    if (activeCount > maxRankSlots) maxRankSlots = activeCount;
+
     for (const round of session.rounds) {
       const ranks = roundRanks(round.scores);
       const myRank = ranks[myIdx];
       if (myRank !== null) {
-        // 自分が参加したラウンドのみカウント（5人回しの抜け番は除外）
         totalRounds++;
         rankSum += myRank;
         rankCount++;
@@ -158,22 +161,21 @@ export function calcOverview(
         }
       }
 
-      // トビ判定: 自分がvictim
       if (round.tobi && round.tobi.victim === myIdx) {
         tobiCount++;
       }
     }
   }
 
+  // 使用した順位スロット数に合わせてトリム（最低3）
+  const effectiveSlots = Math.max(3, maxRankSlots || 4);
+
   return {
     totalSessions: mySessions.length,
     totalRounds,
     totalBalance: Math.round(totalBalance),
     avgRank: rankCount > 0 ? rankSum / rankCount : 0,
-    firstPlace: rankCounts[0],
-    secondPlace: rankCounts[1],
-    thirdPlace: rankCounts[2],
-    fourthPlace: rankCounts[3],
+    rankCounts: rankCounts.slice(0, effectiveSlots),
     tobi: tobiCount,
     tobiRate: rankCount > 0 ? +((tobiCount / rankCount) * 100).toFixed(1) : 0,
   };
@@ -301,12 +303,12 @@ export function calcGroups(
     let myBalance = 0;
     let myRankSum = 0;
     let myRankCount = 0;
-    const myRankCounts: [number, number, number, number] = [0, 0, 0, 0];
+    const myRankCounts: number[] = [0, 0, 0, 0];
 
     // メンバー別集計
     const memberStats = new Map<
       string,
-      { balance: number; rankSum: number; rankCount: number; rankCounts: [number, number, number, number] }
+      { balance: number; rankSum: number; rankCount: number; rankCounts: number[] }
     >();
 
     for (const member of allMembers) {

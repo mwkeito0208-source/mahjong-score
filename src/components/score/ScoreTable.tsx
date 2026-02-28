@@ -33,10 +33,13 @@ const RANK_BADGE_COLOR = [
 
 export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props) {
   const cols = members.length + 1;
-  const gridClass = cols === 5 ? "grid-cols-5" : "grid-cols-6";
+  const gridClass =
+    cols === 4 ? "grid-cols-4" : cols === 5 ? "grid-cols-5" : "grid-cols-6";
+  // 実際の対局人数（5人回しは4人、それ以外はmembers.length）
+  const activePlayerCount = members.length === 5 ? 4 : members.length;
 
-  // 順位分布を計算（メンバーごとに[1着,2着,3着,4着]）
-  const rankDist = members.map(() => [0, 0, 0, 0]);
+  // 順位分布を計算（メンバーごとに[1着,2着,...,N着]）
+  const rankDist = members.map(() => Array(activePlayerCount).fill(0));
   // 参加半荘数を計算（5人回しで抜け番があるメンバー用）
   const playedRounds = members.map(() => 0);
   for (const round of rounds) {
@@ -45,7 +48,7 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
     });
     if (!round.ranks) continue;
     round.ranks.forEach((rank, i) => {
-      if (rank !== null && rank >= 1 && rank <= 4) {
+      if (rank !== null && rank >= 1 && rank <= activePlayerCount) {
         rankDist[i][rank - 1]++;
       }
     });
@@ -115,7 +118,7 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
             const rank = round.ranks?.[i] ?? null;
             const isVictim = round.tobi?.victim === i;
             const isAttacker = round.tobi?.attacker === i;
-            const rankBg = rank ? RANK_BG[rank - 1] : "";
+            const rankBg = rank ? (RANK_BG[rank - 1] ?? "") : "";
             return (
               <div
                 key={i}
@@ -126,9 +129,9 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
                 <span className="text-base">
                   {score >= 0 ? "+" : ""}{score}
                 </span>
-                {rank !== null && (
-                  <sup className={`ml-0.5 text-[10px] font-bold ${RANK_BADGE_COLOR[rank - 1]}`}>
-                    {RANK_BADGE[rank - 1]}
+                {rank !== null && rank <= RANK_BADGE.length && (
+                  <sup className={`ml-0.5 text-[10px] font-bold ${RANK_BADGE_COLOR[rank - 1] ?? "text-gray-300"}`}>
+                    {RANK_BADGE[rank - 1] ?? `⑤`}
                   </sup>
                 )}
                 {isVictim && (
