@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { fetchGroup, addMemberToGroup, fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
+import { fetchGroup, addMemberToGroup, fetchGroups, fetchSessions, linkMemberUserId, fetchMyGroupIds } from "@/lib/supabase-fetch";
 import { useAppStore } from "@/store";
 import { useHydration } from "@/store/useHydration";
+import { useAuth } from "@/components/AuthProvider";
 import type { Group } from "@/lib/types";
 
 export default function JoinGroupPage() {
@@ -13,6 +14,7 @@ export default function JoinGroupPage() {
   const hydrated = useHydration();
   const groupId = params.groupId as string;
 
+  const { user } = useAuth();
   const importGroup = useAppStore((s) => s.importGroup);
   const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
   const groups = useAppStore((s) => s.groups);
@@ -25,12 +27,14 @@ export default function JoinGroupPage() {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
 
-  /** Supabaseから全データを取得してローカルストアに同期 */
+  /** Supabaseからユーザーのデータを取得してローカルストアに同期 */
   const syncAllData = async () => {
+    if (!user?.id) return;
     try {
+      const groupIds = await fetchMyGroupIds(user.id);
       const [remoteGroups, remoteSessions] = await Promise.all([
-        fetchGroups(),
-        fetchSessions(),
+        fetchGroups(user.id),
+        fetchSessions(groupIds),
       ]);
       mergeRemoteData(remoteGroups, remoteSessions);
     } catch {
@@ -66,7 +70,14 @@ export default function JoinGroupPage() {
 
     // 既に同名のメンバーがいるかチェック
     if (group.members.includes(trimmedName)) {
-      // 名前が一致 → ローカルに取り込んでリダイレクト
+      // 名前が一致 → user_id を紐付けてローカルに取り込み
+      if (user?.id) {
+        try {
+          await linkMemberUserId(group.id, trimmedName, user.id);
+        } catch {
+          // 紐付け失敗しても参加は継続
+        }
+      }
       importGroup(group);
       await syncAllData();
       setJoined(true);
@@ -76,7 +87,7 @@ export default function JoinGroupPage() {
 
     setJoining(true);
     try {
-      await addMemberToGroup(group.id, trimmedName);
+      await addMemberToGroup(group.id, trimmedName, user?.id);
 
       // ローカルストアに反映
       const updatedGroup: Group = {

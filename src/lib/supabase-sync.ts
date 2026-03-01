@@ -7,7 +7,11 @@ function warn(label: string, error: unknown) {
 
 // ── Groups ──────────────────────────────────────────────
 
-export async function syncAddGroup(group: Group) {
+export async function syncAddGroup(
+  group: Group,
+  creatorUserId?: string,
+  creatorName?: string
+) {
   try {
     const { error } = await supabase
       .from("groups")
@@ -15,7 +19,7 @@ export async function syncAddGroup(group: Group) {
     if (error) throw error;
 
     if (group.members.length > 0) {
-      await syncGroupMembers(group.id, group.members);
+      await syncGroupMembers(group.id, group.members, creatorUserId, creatorName);
     }
   } catch (e) {
     warn("syncAddGroup", e);
@@ -51,9 +55,30 @@ export async function syncDeleteGroup(id: string) {
   }
 }
 
-export async function syncGroupMembers(groupId: string, members: string[]) {
+export async function syncGroupMembers(
+  groupId: string,
+  members: string[],
+  newUserId?: string,
+  newUserName?: string
+) {
   try {
-    // Delete existing members and re-insert
+    // 既存の user_id マッピングを保持
+    const { data: existing } = await supabase
+      .from("members")
+      .select("name, user_id")
+      .eq("group_id", groupId);
+
+    const userIdMap = new Map<string, string>();
+    for (const m of existing ?? []) {
+      if (m.user_id) userIdMap.set(m.name, m.user_id);
+    }
+
+    // 新規ユーザーの紐付けを追加
+    if (newUserId && newUserName) {
+      userIdMap.set(newUserName, newUserId);
+    }
+
+    // Delete existing members and re-insert with preserved user_ids
     const { error: delError } = await supabase
       .from("members")
       .delete()
@@ -65,6 +90,7 @@ export async function syncGroupMembers(groupId: string, members: string[]) {
         id: crypto.randomUUID(),
         group_id: groupId,
         name,
+        user_id: userIdMap.get(name) ?? null,
       }));
       const { error: insError } = await supabase.from("members").insert(rows);
       if (insError) throw insError;

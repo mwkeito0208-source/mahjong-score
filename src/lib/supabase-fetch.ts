@@ -34,29 +34,75 @@ export async function fetchGroup(groupId: string): Promise<Group | null> {
 /** Supabaseのグループにメンバーを追加 */
 export async function addMemberToGroup(
   groupId: string,
-  name: string
+  name: string,
+  userId?: string
 ): Promise<void> {
-  const { error } = await supabase.from("members").insert({
+  const row: Record<string, unknown> = {
     id: crypto.randomUUID(),
     group_id: groupId,
     name,
-  });
+  };
+  if (userId) row.user_id = userId;
+
+  const { error } = await supabase.from("members").insert(row);
   if (error) throw error;
 }
 
-/** Supabaseから全グループを取得 */
-export async function fetchGroups(): Promise<Group[]> {
-  const { data: groups, error: gErr } = await supabase
+/** 指定ユーザーが所属するグループ ID 一覧を取得 */
+export async function fetchMyGroupIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("members")
+    .select("group_id")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  // 重複排除
+  return [...new Set((data ?? []).map((d) => d.group_id))];
+}
+
+/** 特定メンバーに user_id を紐付け */
+export async function linkMemberUserId(
+  groupId: string,
+  memberName: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("members")
+    .update({ user_id: userId })
+    .eq("group_id", groupId)
+    .eq("name", memberName);
+
+  if (error) throw error;
+}
+
+/** Supabaseからグループを取得（userId指定時は所属グループのみ） */
+export async function fetchGroups(userId?: string): Promise<Group[]> {
+  // userId が指定されている場合、所属グループのみに絞る
+  let groupIds: string[] | null = null;
+  if (userId) {
+    groupIds = await fetchMyGroupIds(userId);
+    if (groupIds.length === 0) return [];
+  }
+
+  let query = supabase
     .from("groups")
     .select("id, name, created_at")
     .order("created_at", { ascending: false });
 
+  if (groupIds) {
+    query = query.in("id", groupIds);
+  }
+
+  const { data: groups, error: gErr } = await query;
+
   if (gErr) throw gErr;
   if (!groups) return [];
 
+  const groupIdList = groups.map((g) => g.id);
   const { data: members, error: mErr } = await supabase
     .from("members")
-    .select("group_id, name");
+    .select("group_id, name")
+    .in("group_id", groupIdList);
 
   if (mErr) throw mErr;
 
@@ -75,12 +121,19 @@ export async function fetchGroups(): Promise<Group[]> {
   }));
 }
 
-/** Supabaseから全セッション（rounds, expenses含む）を取得 */
-export async function fetchSessions(): Promise<Session[]> {
-  const { data: sessions, error: sErr } = await supabase
+/** Supabaseからセッションを取得（groupIds指定時は対象グループのみ） */
+export async function fetchSessions(groupIds?: string[]): Promise<Session[]> {
+  let query = supabase
     .from("sessions")
     .select("id, group_id, date, members, settings, status, chip_config, chip_counts")
     .order("date", { ascending: false });
+
+  if (groupIds) {
+    if (groupIds.length === 0) return [];
+    query = query.in("group_id", groupIds);
+  }
+
+  const { data: sessions, error: sErr } = await query;
 
   if (sErr) throw sErr;
   if (!sessions) return [];
@@ -128,13 +181,15 @@ export async function fetchSessions(): Promise<Session[]> {
     expensesBySession.set(e.session_id, list);
   }
 
-  // sessions テーブルに members カラムがないので、
-  // group の members を使う。group_id → members のマップが必要。
-  // ただしセッション作成時のメンバー構成は rounds の scores 長で推測可能。
-  // ここでは groups から members を取得して補完する。
-  const { data: allMembers } = await supabase
-    .from("members")
-    .select("group_id, name");
+  // sessions テーブルに members カラムがないケースに備え、
+  // group の members で補完する。
+  const relevantGroupIds = [...new Set(sessions.map((s) => s.group_id))];
+  const { data: allMembers } = relevantGroupIds.length > 0
+    ? await supabase
+        .from("members")
+        .select("group_id, name")
+        .in("group_id", relevantGroupIds)
+    : { data: [] };
 
   const membersByGroup = new Map<string, string[]>();
   for (const m of allMembers ?? []) {

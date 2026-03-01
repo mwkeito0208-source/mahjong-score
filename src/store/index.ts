@@ -31,7 +31,7 @@ type State = {
 };
 
 type Actions = {
-  addGroup: (name: string, members?: string[]) => Group;
+  addGroup: (name: string, members?: string[], userId?: string) => Group;
   importGroup: (group: Group) => void;
   updateGroup: (id: string, patch: Partial<Pick<Group, "name" | "members">>) => void;
   deleteGroup: (id: string) => void;
@@ -59,7 +59,7 @@ export const useAppStore = create<State & Actions>()(
       groups: [],
       sessions: [],
 
-      addGroup: (name, members = []) => {
+      addGroup: (name, members = [], userId?: string) => {
         const group: Group = {
           id: crypto.randomUUID(),
           name,
@@ -67,7 +67,8 @@ export const useAppStore = create<State & Actions>()(
           createdAt: new Date().toISOString(),
         };
         set((s) => ({ groups: [group, ...s.groups] }));
-        syncAddGroup(group);
+        // 作成者の名前はmembers[0]として紐付け
+        syncAddGroup(group, userId, members[0]);
         return group;
       },
 

@@ -1,30 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { GroupCard } from "@/components/GroupCard";
 import { CreateGroupModal } from "@/components/CreateGroupModal";
 import { InviteLinkModal } from "@/components/InviteLinkModal";
+import { NameRegistrationModal } from "@/components/NameRegistrationModal";
 import { useAppStore } from "@/store";
 import { getGroupSummary } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
 import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
+import { useAuth } from "@/components/AuthProvider";
+import { fetchMyGroupIds, linkMemberUserId, fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
 import type { Group } from "@/lib/types";
+
+/** ローカルグループから全メンバー名を重複排除で収集 */
+function collectMemberNames(groups: Group[]): string[] {
+  const names = new Set<string>();
+  for (const g of groups) {
+    for (const m of g.members) names.add(m);
+  }
+  return [...names].sort();
+}
 
 export default function Home() {
   const hydrated = useHydration();
-  useSyncFromSupabase();
+  const synced = useSyncFromSupabase();
+  const { user } = useAuth();
   const groups = useAppStore((s) => s.groups);
   const sessions = useAppStore((s) => s.sessions);
   const addGroup = useAppStore((s) => s.addGroup);
+  const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showNameRegistration, setShowNameRegistration] = useState(false);
+  const [migrationChecked, setMigrationChecked] = useState(false);
+
+  // 移行チェック: ローカルにグループがあるが user_id が未紐付けの場合
+  useEffect(() => {
+    if (!hydrated || !synced || !user || migrationChecked) return;
+
+    (async () => {
+      try {
+        const myGroupIds = await fetchMyGroupIds(user.id);
+        // ローカルにグループがあるのにリンク済みがゼロ → 移行が必要
+        if (groups.length > 0 && myGroupIds.length === 0) {
+          setShowNameRegistration(true);
+        }
+      } catch {
+        // チェック失敗しても通常動作
+      } finally {
+        setMigrationChecked(true);
+      }
+    })();
+  }, [hydrated, synced, user, groups.length, migrationChecked]);
+
+  // 名前選択後の移行処理
+  const handleNameRegistration = useCallback(
+    async (name: string) => {
+      if (!user) return;
+
+      // 全ローカルグループの該当メンバーに user_id を紐付け
+      for (const group of groups) {
+        if (group.members.includes(name)) {
+          try {
+            await linkMemberUserId(group.id, name, user.id);
+          } catch {
+            // 個別失敗は無視
+          }
+        }
+      }
+
+      // 紐付け後にデータを再取得
+      try {
+        const groupIds = await fetchMyGroupIds(user.id);
+        const [remoteGroups, remoteSessions] = await Promise.all([
+          fetchGroups(user.id),
+          fetchSessions(groupIds),
+        ]);
+        mergeRemoteData(remoteGroups, remoteSessions);
+      } catch {
+        // 再取得失敗しても閉じる
+      }
+
+      setShowNameRegistration(false);
+    },
+    [user, groups, mergeRemoteData]
+  );
 
   const handleCreateGroup = (name: string) => {
-    const newGroup = addGroup(name);
+    const newGroup = addGroup(name, undefined, user?.id);
     setShowCreateGroup(false);
     setSelectedGroup(newGroup);
     setShowInviteLink(true);
@@ -177,6 +245,13 @@ export default function Home() {
             setShowInviteLink(false);
             setSelectedGroup(null);
           }}
+        />
+      )}
+
+      {showNameRegistration && (
+        <NameRegistrationModal
+          memberNames={collectMemberNames(groups)}
+          onSelect={handleNameRegistration}
         />
       )}
     </div>

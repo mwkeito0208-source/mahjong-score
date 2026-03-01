@@ -6,7 +6,8 @@ import { OverviewTab } from "@/components/stats/OverviewTab";
 import { MonthlyTab } from "@/components/stats/MonthlyTab";
 import { OpponentsTab } from "@/components/stats/OpponentsTab";
 import { GroupsTab, type GroupStat } from "@/components/stats/GroupsTab";
-import { fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
+import { fetchGroups, fetchSessions, fetchMyGroupIds } from "@/lib/supabase-fetch";
+import { useAuth } from "@/components/AuthProvider";
 import {
   getAllMemberNames,
   calcOverview,
@@ -32,6 +33,7 @@ const SELECTED_MEMBER_KEY = "mahjong-stats-selected-member";
 
 export default function StatsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   const [loading, setLoading] = useState(true);
@@ -50,9 +52,15 @@ export default function StatsPage() {
 
   // データ取得
   useEffect(() => {
+    if (!user) return;
+
     (async () => {
       try {
-        const [g, s] = await Promise.all([fetchGroups(), fetchSessions()]);
+        const groupIds = await fetchMyGroupIds(user.id);
+        const [g, s] = await Promise.all([
+          fetchGroups(user.id),
+          fetchSessions(groupIds),
+        ]);
         setGroups(g);
         setSessions(s);
 
@@ -73,7 +81,7 @@ export default function StatsPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user]);
 
   // 統計計算
   const recalc = useCallback(

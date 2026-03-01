@@ -1,19 +1,25 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/store";
-import { fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
+import { useAuth } from "@/components/AuthProvider";
+import { fetchGroups, fetchSessions, fetchMyGroupIds } from "@/lib/supabase-fetch";
 
 export function useSyncFromSupabase(): boolean {
   const [synced, setSynced] = useState(false);
+  const { user } = useAuth();
   const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
 
   useEffect(() => {
+    // ユーザーが確定するまで sync しない
+    if (!user) return;
+
     let cancelled = false;
 
     (async () => {
       try {
+        const groupIds = await fetchMyGroupIds(user.id);
         const [groups, sessions] = await Promise.all([
-          fetchGroups(),
-          fetchSessions(),
+          fetchGroups(user.id),
+          fetchSessions(groupIds),
         ]);
         if (!cancelled) {
           mergeRemoteData(groups, sessions);
@@ -30,7 +36,7 @@ export function useSyncFromSupabase(): boolean {
     return () => {
       cancelled = true;
     };
-  }, [mergeRemoteData]);
+  }, [mergeRemoteData, user]);
 
   return synced;
 }
