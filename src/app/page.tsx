@@ -12,6 +12,12 @@ import { useHydration } from "@/store/useHydration";
 import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
 import { useAuth } from "@/components/AuthProvider";
 import { fetchMyGroupIds, linkMemberUserId, fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
+import {
+  syncAddGroup,
+  syncCreateSession,
+  syncAddRound,
+  syncAddExpense,
+} from "@/lib/supabase-sync";
 import type { Group } from "@/lib/types";
 
 /** ローカルグループから全メンバー名を重複排除で収集 */
@@ -48,6 +54,19 @@ export default function Home() {
         const myGroupIds = await fetchMyGroupIds(user.id);
         // ローカルにグループがあるのにリンク済みがゼロ → 移行が必要
         if (groups.length > 0 && myGroupIds.length === 0) {
+          // まずローカルデータをSupabaseにプッシュ（テーブルが空の場合に対応）
+          for (const group of groups) {
+            await syncAddGroup(group);
+          }
+          for (const session of sessions) {
+            await syncCreateSession(session);
+            for (let i = 0; i < session.rounds.length; i++) {
+              await syncAddRound(session.id, session.rounds[i], i + 1);
+            }
+            for (const expense of session.expenses) {
+              await syncAddExpense(session.id, expense);
+            }
+          }
           setShowNameRegistration(true);
         }
       } catch {
@@ -56,7 +75,7 @@ export default function Home() {
         setMigrationChecked(true);
       }
     })();
-  }, [hydrated, synced, user, groups.length, migrationChecked]);
+  }, [hydrated, synced, user, groups, sessions, migrationChecked]);
 
   // 名前選択後の移行処理
   const handleNameRegistration = useCallback(
