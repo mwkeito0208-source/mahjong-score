@@ -41,12 +41,14 @@ export default function GroupDetailPage() {
   const groups = useAppStore((s) => s.groups);
   const sessions = useAppStore((s) => s.sessions);
   const deleteSession = useAppStore((s) => s.deleteSession);
+  const deleteGroup = useAppStore((s) => s.deleteGroup);
 
   const group = getGroup(groups, groupId);
   const groupSessions = getGroupSessions(sessions, groupId);
 
   const [selectedSession, setSelectedSession] =
     useState<SessionSummary | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!hydrated) {
     return (
@@ -126,13 +128,50 @@ export default function GroupDetailPage() {
             {group.members.length}人のメンバー
           </div>
         </div>
-        <button
-          onClick={() => router.push("/")}
-          className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
-        >
-          ← 戻る
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded-lg bg-white/20 px-3 py-2 text-sm hover:bg-red-500/40"
+          >
+            🗑
+          </button>
+          <button
+            onClick={() => router.push("/")}
+            className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
+          >
+            ← 戻る
+          </button>
+        </div>
       </div>
+
+      {/* グループ削除確認 */}
+      {showDeleteConfirm && (
+        <div className="mb-4 rounded-xl bg-red-50 p-4 shadow-md">
+          <p className="mb-2 text-center text-sm font-bold text-red-600">
+            「{group.name}」を削除しますか？
+          </p>
+          <p className="mb-3 text-center text-xs text-red-500">
+            関連するセッションも全て削除されます
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 rounded-lg bg-gray-200 py-2 text-sm text-gray-700"
+            >
+              やめる
+            </button>
+            <button
+              onClick={() => {
+                deleteGroup(groupId);
+                router.push("/");
+              }}
+              className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-bold text-white"
+            >
+              削除する
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* メンバー一覧 */}
       <div className="mb-4 rounded-xl bg-white p-4 shadow-md">

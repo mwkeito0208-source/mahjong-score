@@ -48,6 +48,41 @@ export async function syncUpdateGroup(
 
 export async function syncDeleteGroup(id: string) {
   try {
+    // グループに属するセッションを取得
+    const { data: sessions } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("group_id", id);
+
+    // 各セッションの rounds, expenses を削除
+    for (const ses of sessions ?? []) {
+      try {
+        await supabase.from("rounds").delete().eq("session_id", ses.id);
+      } catch (e) {
+        warn("syncDeleteGroup:rounds", e);
+      }
+      try {
+        await supabase.from("expenses").delete().eq("session_id", ses.id);
+      } catch (e) {
+        warn("syncDeleteGroup:expenses", e);
+      }
+    }
+
+    // セッションを削除
+    try {
+      await supabase.from("sessions").delete().eq("group_id", id);
+    } catch (e) {
+      warn("syncDeleteGroup:sessions", e);
+    }
+
+    // メンバーを削除
+    try {
+      await supabase.from("members").delete().eq("group_id", id);
+    } catch (e) {
+      warn("syncDeleteGroup:members", e);
+    }
+
+    // グループ本体を削除
     const { error } = await supabase.from("groups").delete().eq("id", id);
     if (error) throw error;
   } catch (e) {

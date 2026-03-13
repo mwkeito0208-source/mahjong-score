@@ -20,6 +20,9 @@ import {
 } from "@/lib/supabase-sync";
 import type { Group } from "@/lib/types";
 
+/** ページ遷移で再マウントされてもリセットされないようモジュールレベルで保持 */
+let migrationDone = false;
+
 /** ローカルグループから全メンバー名を重複排除で収集 */
 function collectMemberNames(groups: Group[]): string[] {
   const names = new Set<string>();
@@ -36,6 +39,7 @@ export default function Home() {
   const groups = useAppStore((s) => s.groups);
   const sessions = useAppStore((s) => s.sessions);
   const addGroup = useAppStore((s) => s.addGroup);
+  const deleteGroup = useAppStore((s) => s.deleteGroup);
   const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -43,11 +47,10 @@ export default function Home() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showNameRegistration, setShowNameRegistration] = useState(false);
-  const [migrationChecked, setMigrationChecked] = useState(false);
 
   // 移行チェック: ローカルにグループがあるが user_id が未紐付けの場合
   useEffect(() => {
-    if (!hydrated || !synced || !user || migrationChecked) return;
+    if (!hydrated || !synced || !user || migrationDone) return;
 
     (async () => {
       try {
@@ -72,10 +75,10 @@ export default function Home() {
       } catch {
         // チェック失敗しても通常動作
       } finally {
-        setMigrationChecked(true);
+        migrationDone = true;
       }
     })();
-  }, [hydrated, synced, user, groups, sessions, migrationChecked]);
+  }, [hydrated, synced, user, groups, sessions]);
 
   // 名前選択後の移行処理
   const handleNameRegistration = useCallback(
@@ -171,6 +174,7 @@ export default function Home() {
                 lastPlayed={summary.lastPlayed}
                 totalSessions={summary.totalSessions}
                 onInvite={handleShowInvite}
+                onDelete={(group) => deleteGroup(group.id)}
               />
             );
           })
