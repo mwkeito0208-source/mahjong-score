@@ -5,7 +5,6 @@ import {
   calculateRoundScores,
   calculateMoney,
 } from "./score";
-import { calculateChipBalances, calculateExpenseBalances } from "./settlement";
 import type { GroupStat, MemberStat } from "@/components/stats/GroupsTab";
 
 // ── Types ───────────────────────────────────────────────
@@ -73,23 +72,6 @@ function sessionMahjongBalances(session: Session): number[] {
   return calculateMoney(totals, settings.rate);
 }
 
-/** セッション1つ分の最終収支（麻雀+チップ+費用） */
-function sessionFinalBalances(session: Session): number[] {
-  const mahjong = sessionMahjongBalances(session);
-
-  const chip = session.chipConfig.enabled
-    ? calculateChipBalances(
-        session.chipCounts,
-        session.chipConfig.startChips,
-        session.chipConfig.pricePerChip
-      )
-    : session.members.map(() => 0);
-
-  const expense = calculateExpenseBalances(session.members, session.expenses);
-
-  return mahjong.map((m, i) => m + chip[i] + expense[i]);
-}
-
 /** 1ラウンドで各メンバーの順位を取得 (null=抜け番) */
 function roundRanks(scores: (number | null)[]): (number | null)[] {
   const activeScores: number[] = [];
@@ -142,7 +124,7 @@ export function calcOverview(
 
   for (const session of mySessions) {
     const myIdx = memberIndex(session, myName);
-    const balances = sessionFinalBalances(session);
+    const balances = sessionMahjongBalances(session);
     totalBalance += balances[myIdx];
 
     // セッションの実際の対局人数を計算（5人回しは4人対局）
@@ -193,7 +175,7 @@ export function calcMonthly(
 
   for (const session of mySessions) {
     const myIdx = memberIndex(session, myName);
-    const balances = sessionFinalBalances(session);
+    const balances = sessionMahjongBalances(session);
     const month = session.date.slice(0, 7).replace("-", "/"); // "2026-02" → "2026/02"
 
     const entry = monthMap.get(month) ?? { sessions: 0, balance: 0 };
@@ -226,7 +208,7 @@ export function calcOpponents(
 
   for (const session of mySessions) {
     const myIdx = memberIndex(session, myName);
-    const balances = sessionFinalBalances(session);
+    const balances = sessionMahjongBalances(session);
 
     // 自分の収支
     const myBalance = balances[myIdx];
@@ -328,7 +310,7 @@ export function calcGroups(
     const sessionHistory: GroupStat["sessionHistory"] = [];
 
     for (const session of sortedSessions) {
-      const balances = sessionFinalBalances(session);
+      const balances = sessionMahjongBalances(session);
       const myIdx = memberIndex(session, myName);
       myBalance += balances[myIdx];
 

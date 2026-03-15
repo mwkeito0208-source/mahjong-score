@@ -284,7 +284,7 @@ export function AddRoundModal({
                     <input
                       ref={inputRef}
                       type="number"
-                      inputMode="numeric"
+                      inputMode="text"
                       value={editingValue}
                       onChange={(e) => setEditingValue(e.target.value)}
                       onBlur={commitEditing}

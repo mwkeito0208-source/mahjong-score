@@ -19,9 +19,9 @@ export function SessionDetailModal({ session, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[80vh] w-full max-w-sm overflow-hidden rounded-2xl bg-white">
+      <div className="flex max-h-[85vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white">
         {/* ヘッダー */}
-        <div className="bg-green-900 p-4 text-white">
+        <div className="flex-shrink-0 bg-green-900 p-4 text-white">
           <div className="flex items-center justify-between">
             <div>
               <div className="font-bold">{session.date}</div>
@@ -37,10 +37,7 @@ export function SessionDetailModal({ session, onClose }: Props) {
         </div>
 
         {/* 内容 */}
-        <div
-          className="overflow-y-auto p-4"
-          style={{ maxHeight: "calc(80vh - 120px)" }}
-        >
+        <div className="flex-1 overflow-y-auto p-4">
           <div className="mb-4">
             <div className="mb-2 text-sm text-gray-500">参加者</div>
             <div className="flex flex-wrap gap-2">
@@ -98,7 +95,7 @@ export function SessionDetailModal({ session, onClose }: Props) {
         </div>
 
         {/* フッター */}
-        <div className="border-t border-gray-100 p-4">
+        <div className="flex-shrink-0 border-t border-gray-100 p-4">
           <Link
             href={`/session/${session.id}/score`}
             className="block w-full rounded-lg bg-gray-100 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-200"

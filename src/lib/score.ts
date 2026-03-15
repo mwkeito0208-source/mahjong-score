@@ -60,7 +60,14 @@ export function calculateRoundScores(
   const activeScores = activeIndices.map((i) => rawScores[i] as number);
 
   const rounded = activeScores.map(roundScore);
+
+  // 五捨六入の丸め誤差を1位が負担（サムゼロ補正）
+  const expectedTotal = startPoints * activeScores.length;
+  const roundedTotal = rounded.reduce((sum, s) => sum + s, 0);
   const ranks = getRanks(rounded);
+  const firstPlaceIdx = ranks.indexOf(1);
+  rounded[firstPlaceIdx] += expectedTotal - roundedTotal;
+
   const activeUma = uma.slice(0, activeScores.length);
   const activeFinals = rounded.map((score, i) =>
     calculateFinalScore(score, ranks[i], returnPoints, activeUma)
@@ -69,7 +76,6 @@ export function calculateRoundScores(
   // オカ（1位ボーナス）: (返し点 - 持ち点) × 人数
   const oka = (returnPoints - startPoints) * activeScores.length;
   if (oka !== 0) {
-    const firstPlaceIdx = ranks.indexOf(1);
     activeFinals[firstPlaceIdx] += oka;
   }
 
