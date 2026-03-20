@@ -121,6 +121,29 @@ export default function GroupDetailPage() {
     };
   });
 
+  // メンバー別累計ポイントを集計
+  const pointsMap = new Map<string, number>();
+  for (const ses of groupSessions) {
+    const roundDataList: RoundData[] = ses.rounds.map((r) => ({
+      scores: r.scores,
+      tobi: r.tobi,
+    }));
+    if (roundDataList.length === 0) continue;
+    const totals = calculateTotals(
+      roundDataList,
+      ses.settings.returnPoints,
+      ses.settings.uma,
+      ses.settings.tobiPenalty,
+      ses.settings.startPoints
+    );
+    ses.members.forEach((name, i) => {
+      pointsMap.set(name, (pointsMap.get(name) ?? 0) + totals[i]);
+    });
+  }
+  const ranking = [...pointsMap.entries()]
+    .map(([name, pts]) => ({ name, pts }))
+    .sort((a, b) => b.pts - a.pts);
+
   return (
     <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
       {/* ヘッダー */}
@@ -176,33 +199,46 @@ export default function GroupDetailPage() {
         </div>
       )}
 
-      {/* メンバー一覧 */}
+      {/* ランキング */}
       <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
-        <h3 className="mb-2 text-sm font-bold text-gray-500">
-          メンバー
+        <h3 className="mb-3 text-sm font-bold text-gray-500">
+          ランキング
           <span className="ml-2 text-xs font-normal text-gray-400">
             タップで名前変更
           </span>
         </h3>
-        <div className="flex flex-wrap gap-2">
-          {group.members.map((name) => (
-            <button
-              key={name}
-              onClick={() => {
-                setRenamingMember(name);
-                setNewMemberName(name);
-              }}
-              className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-            >
-              {name}
-            </button>
-          ))}
-          {group.members.length === 0 && (
-            <span className="text-sm text-gray-400">
-              セッション開始時にメンバーが追加されます
-            </span>
-          )}
-        </div>
+        {ranking.length > 0 ? (
+          <div className="space-y-2">
+            {ranking.map((r, i) => (
+              <button
+                key={r.name}
+                onClick={() => {
+                  setRenamingMember(r.name);
+                  setNewMemberName(r.name);
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-gray-50 active:bg-gray-100"
+              >
+                <span className={`text-lg font-bold ${
+                  i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-amber-600" : "text-gray-300"
+                }`}>
+                  {i + 1}
+                </span>
+                <span className="flex-1 text-sm font-medium text-gray-800">
+                  {r.name}
+                </span>
+                <span className={`text-sm font-bold ${
+                  r.pts > 0 ? "text-green-600" : r.pts < 0 ? "text-red-500" : "text-gray-500"
+                }`}>
+                  {r.pts > 0 ? "+" : ""}{r.pts.toFixed(1)}pt
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">
+            セッションを記録するとランキングが表示されます
+          </p>
+        )}
       </div>
 
       {/* メンバー名変更モーダル */}
