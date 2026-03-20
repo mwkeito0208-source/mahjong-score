@@ -23,6 +23,7 @@ import {
   syncUpdateExpense,
   syncRemoveExpense,
   syncSettleSession,
+  syncRenameMember,
 } from "@/lib/supabase-sync";
 
 type State = {
@@ -50,6 +51,7 @@ type Actions = {
   updateExpense: (sessionId: string, expenseId: string, patch: Partial<Omit<Expense, "id">>) => void;
   removeExpense: (sessionId: string, expenseId: string) => void;
   settleSession: (sessionId: string) => void;
+  renameMember: (groupId: string, oldName: string, newName: string) => void;
   mergeRemoteData: (groups: Group[], sessions: Session[]) => void;
   replaceGroupData: (group: Group, sessions: Session[]) => void;
 };
@@ -227,6 +229,36 @@ export const useAppStore = create<State & Actions>()(
           ),
         }));
         syncSettleSession(sessionId);
+      },
+
+      renameMember: (groupId, oldName, newName) => {
+        set((s) => {
+          const rename = (name: string) => (name === oldName ? newName : name);
+          const dedup = (arr: string[]) => [...new Set(arr)];
+          return {
+            groups: s.groups.map((g) =>
+              g.id === groupId
+                ? { ...g, members: dedup(g.members.map(rename)) }
+                : g
+            ),
+            sessions: s.sessions.map((ses) => {
+              if (ses.groupId !== groupId) return ses;
+              const newMembers = dedup(ses.members.map(rename));
+              return {
+                ...ses,
+                members: newMembers,
+                expenses: ses.expenses.map((exp) => ({
+                  ...exp,
+                  paidBy: rename(exp.paidBy),
+                  forMembers: exp.forMembers
+                    ? dedup(exp.forMembers.map(rename))
+                    : undefined,
+                })),
+              };
+            }),
+          };
+        });
+        syncRenameMember(groupId, oldName, newName);
       },
 
       replaceGroupData: (group, sessions) => {

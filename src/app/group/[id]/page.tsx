@@ -42,6 +42,7 @@ export default function GroupDetailPage() {
   const sessions = useAppStore((s) => s.sessions);
   const deleteSession = useAppStore((s) => s.deleteSession);
   const deleteGroup = useAppStore((s) => s.deleteGroup);
+  const renameMember = useAppStore((s) => s.renameMember);
 
   const group = getGroup(groups, groupId);
   const groupSessions = getGroupSessions(sessions, groupId);
@@ -49,6 +50,8 @@ export default function GroupDetailPage() {
   const [selectedSession, setSelectedSession] =
     useState<SessionSummary | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [renamingMember, setRenamingMember] = useState<string | null>(null);
+  const [newMemberName, setNewMemberName] = useState("");
 
   if (!hydrated) {
     return (
@@ -175,15 +178,24 @@ export default function GroupDetailPage() {
 
       {/* メンバー一覧 */}
       <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
-        <h3 className="mb-2 text-sm font-bold text-gray-500">メンバー</h3>
+        <h3 className="mb-2 text-sm font-bold text-gray-500">
+          メンバー
+          <span className="ml-2 text-xs font-normal text-gray-400">
+            タップで名前変更
+          </span>
+        </h3>
         <div className="flex flex-wrap gap-2">
           {group.members.map((name) => (
-            <span
+            <button
               key={name}
-              className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+              onClick={() => {
+                setRenamingMember(name);
+                setNewMemberName(name);
+              }}
+              className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 active:bg-gray-300"
             >
               {name}
-            </span>
+            </button>
           ))}
           {group.members.length === 0 && (
             <span className="text-sm text-gray-400">
@@ -192,6 +204,59 @@ export default function GroupDetailPage() {
           )}
         </div>
       </div>
+
+      {/* メンバー名変更モーダル */}
+      {renamingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6">
+            <h3 className="mb-4 text-center text-lg font-bold">
+              メンバー名の変更
+            </h3>
+            <p className="mb-2 text-center text-sm text-gray-500">
+              「{renamingMember}」→ 新しい名前
+            </p>
+            <input
+              type="text"
+              value={newMemberName}
+              onChange={(e) => setNewMemberName(e.target.value)}
+              className="mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-base"
+              autoFocus
+            />
+            {newMemberName &&
+              newMemberName !== renamingMember &&
+              group.members.includes(newMemberName) && (
+                <p className="mb-2 text-center text-xs text-amber-600">
+                  「{newMemberName}」は既に存在します。統合されます。
+                </p>
+              )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRenamingMember(null)}
+                className="flex-1 rounded-lg bg-gray-200 py-3 text-base text-gray-700 hover:bg-gray-300"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  if (
+                    newMemberName.trim() &&
+                    newMemberName !== renamingMember
+                  ) {
+                    renameMember(groupId, renamingMember, newMemberName.trim());
+                    setRenamingMember(null);
+                  }
+                }}
+                disabled={
+                  !newMemberName.trim() || newMemberName === renamingMember
+                }
+                className="flex-1 rounded-lg bg-green-600 py-3 text-base font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+              >
+                変更する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* セッションを開始ボタン */}
       <Link

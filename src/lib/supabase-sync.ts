@@ -135,6 +135,89 @@ export async function syncGroupMembers(
   }
 }
 
+/** グループ内のメンバー名を一括変更（members, sessions, expenses） */
+export async function syncRenameMember(
+  groupId: string,
+  oldName: string,
+  newName: string
+) {
+  try {
+    // 1. members テーブル: 名前を変更
+    const { data: existing } = await supabase
+      .from("members")
+      .select("id, name")
+      .eq("group_id", groupId)
+      .eq("name", oldName);
+
+    const { data: duplicate } = await supabase
+      .from("members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("name", newName);
+
+    if (duplicate && duplicate.length > 0 && existing) {
+      // 統合: 旧名のメンバー行を削除
+      await supabase
+        .from("members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("name", oldName);
+    } else if (existing && existing.length > 0) {
+      // リネーム: 名前を更新
+      await supabase
+        .from("members")
+        .update({ name: newName })
+        .eq("group_id", groupId)
+        .eq("name", oldName);
+    }
+
+    // 2. sessions テーブル: members JSON配列内の名前を置換
+    const { data: sessions } = await supabase
+      .from("sessions")
+      .select("id, members")
+      .eq("group_id", groupId);
+
+    for (const ses of sessions ?? []) {
+      const members = ses.members as string[] | null;
+      if (!members || !members.includes(oldName)) continue;
+      const updated = members.map((m: string) => (m === oldName ? newName : m));
+      // 統合時に重複を排除
+      const deduped = [...new Set(updated)];
+      await supabase
+        .from("sessions")
+        .update({ members: deduped })
+        .eq("id", ses.id);
+    }
+
+    // 3. expenses テーブル: paid_by と for_members を更新
+    const sessionIds = (sessions ?? []).map((s) => s.id);
+    if (sessionIds.length > 0) {
+      await supabase
+        .from("expenses")
+        .update({ paid_by: newName })
+        .eq("paid_by", oldName)
+        .in("session_id", sessionIds);
+
+      const { data: expenses } = await supabase
+        .from("expenses")
+        .select("id, for_members")
+        .in("session_id", sessionIds);
+
+      for (const exp of expenses ?? []) {
+        const fm = exp.for_members as string[] | null;
+        if (!fm || !fm.includes(oldName)) continue;
+        const updated = [...new Set(fm.map((m: string) => (m === oldName ? newName : m)))];
+        await supabase
+          .from("expenses")
+          .update({ for_members: updated })
+          .eq("id", exp.id);
+      }
+    }
+  } catch (e) {
+    warn("syncRenameMember", e);
+  }
+}
+
 // ── Sessions ────────────────────────────────────────────
 
 export async function syncCreateSession(session: Session) {
