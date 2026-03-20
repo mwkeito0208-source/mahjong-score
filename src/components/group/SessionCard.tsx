@@ -109,10 +109,10 @@ export function SessionCard({ session, onClick, onDelete }: Props) {
             <div key={result.name} className="flex-1 text-center">
               <div className="truncate text-xs text-gray-500">{result.name}</div>
               <div
-                className={`text-sm font-bold ${result.money >= 0 ? "text-green-600" : "text-red-600"}`}
+                className={`text-sm font-bold ${result.score >= 0 ? "text-green-600" : "text-red-600"}`}
               >
-                {result.money >= 0 ? "+" : ""}
-                {result.money.toLocaleString()}
+                {result.score >= 0 ? "+" : ""}
+                {result.score.toFixed(1)}
               </div>
             </div>
           ))}

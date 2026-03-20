@@ -103,7 +103,7 @@ export default function GroupDetailPage() {
         score: totals[i],
         money: money[i],
       }))
-      .sort((a, b) => b.money - a.money);
+      .sort((a, b) => b.score - a.score);
 
     const d = new Date(ses.date);
     const dateStr = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
@@ -121,8 +121,9 @@ export default function GroupDetailPage() {
     };
   });
 
-  // メンバー別累計ポイントを集計
+  // メンバー別累計ポイント・半荘回数を集計
   const pointsMap = new Map<string, number>();
+  const roundsMap = new Map<string, number>();
   for (const ses of groupSessions) {
     const roundDataList: RoundData[] = ses.rounds.map((r) => ({
       scores: r.scores,
@@ -138,10 +139,11 @@ export default function GroupDetailPage() {
     );
     ses.members.forEach((name, i) => {
       pointsMap.set(name, (pointsMap.get(name) ?? 0) + totals[i]);
+      roundsMap.set(name, (roundsMap.get(name) ?? 0) + ses.rounds.length);
     });
   }
   const ranking = [...pointsMap.entries()]
-    .map(([name, pts]) => ({ name, pts }))
+    .map(([name, pts]) => ({ name, pts, rounds: roundsMap.get(name) ?? 0 }))
     .sort((a, b) => b.pts - a.pts);
 
   return (
@@ -208,31 +210,44 @@ export default function GroupDetailPage() {
           </span>
         </h3>
         {ranking.length > 0 ? (
-          <div className="space-y-2">
-            {ranking.map((r, i) => (
-              <button
-                key={r.name}
-                onClick={() => {
-                  setRenamingMember(r.name);
-                  setNewMemberName(r.name);
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-gray-50 active:bg-gray-100"
-              >
-                <span className={`text-lg font-bold ${
-                  i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-amber-600" : "text-gray-300"
-                }`}>
-                  {i + 1}
-                </span>
-                <span className="flex-1 text-sm font-medium text-gray-800">
-                  {r.name}
-                </span>
-                <span className={`text-sm font-bold ${
-                  r.pts > 0 ? "text-green-600" : r.pts < 0 ? "text-red-500" : "text-gray-500"
-                }`}>
-                  {r.pts > 0 ? "+" : ""}{r.pts.toFixed(1)}pt
-                </span>
-              </button>
-            ))}
+          <div className="space-y-1">
+            {ranking.map((r, i) => {
+              const diff = i === 0 ? 0 : r.pts - ranking[i - 1].pts;
+              return (
+                <button
+                  key={r.name}
+                  onClick={() => {
+                    setRenamingMember(r.name);
+                    setNewMemberName(r.name);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-gray-50 active:bg-gray-100"
+                >
+                  <span className={`w-6 text-center text-lg font-bold ${
+                    i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-amber-600" : "text-gray-300"
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 text-sm font-medium text-gray-800">
+                    {r.name}
+                    <span className="ml-1 text-xs text-gray-400">
+                      {r.rounds}半荘
+                    </span>
+                  </span>
+                  <div className="text-right">
+                    <div className={`text-sm font-bold ${
+                      r.pts > 0 ? "text-green-600" : r.pts < 0 ? "text-red-500" : "text-gray-500"
+                    }`}>
+                      {r.pts > 0 ? "+" : ""}{r.pts.toFixed(1)}
+                    </div>
+                    {i > 0 && (
+                      <div className="text-xs text-gray-400">
+                        {diff.toFixed(1)}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-gray-400">
