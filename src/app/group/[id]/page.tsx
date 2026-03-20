@@ -210,7 +210,15 @@ export default function GroupDetailPage() {
           </span>
         </h3>
         {ranking.length > 0 ? (
-          <div className="space-y-1">
+          <div>
+            {/* ヘッダー */}
+            <div className="flex items-center gap-2 border-b border-gray-200 px-3 py-1 text-xs text-gray-400">
+              <span className="w-6 text-center">#</span>
+              <span className="flex-1">名前</span>
+              <span className="w-16 text-right">素点</span>
+              <span className="w-14 text-right">差</span>
+              <span className="w-10 text-right">半荘</span>
+            </div>
             {ranking.map((r, i) => {
               const diff = i === 0 ? 0 : r.pts - ranking[i - 1].pts;
               return (
@@ -220,31 +228,27 @@ export default function GroupDetailPage() {
                     setRenamingMember(r.name);
                     setNewMemberName(r.name);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-gray-50 active:bg-gray-100"
+                  className="flex w-full items-center gap-2 border-b border-gray-50 px-3 py-2 text-left hover:bg-gray-50 active:bg-gray-100"
                 >
                   <span className={`w-6 text-center text-lg font-bold ${
                     i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-amber-600" : "text-gray-300"
                   }`}>
                     {i + 1}
                   </span>
-                  <span className="flex-1 text-sm font-medium text-gray-800">
+                  <span className="flex-1 truncate text-sm font-medium text-gray-800">
                     {r.name}
-                    <span className="ml-1 text-xs text-gray-400">
-                      {r.rounds}半荘
-                    </span>
                   </span>
-                  <div className="text-right">
-                    <div className={`text-sm font-bold ${
-                      r.pts > 0 ? "text-green-600" : r.pts < 0 ? "text-red-500" : "text-gray-500"
-                    }`}>
-                      {r.pts > 0 ? "+" : ""}{r.pts.toFixed(1)}
-                    </div>
-                    {i > 0 && (
-                      <div className="text-xs text-gray-400">
-                        {diff.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
+                  <span className={`w-16 text-right text-sm font-bold ${
+                    r.pts > 0 ? "text-green-600" : r.pts < 0 ? "text-red-500" : "text-gray-500"
+                  }`}>
+                    {r.pts > 0 ? "+" : ""}{r.pts.toFixed(1)}
+                  </span>
+                  <span className="w-14 text-right text-xs text-gray-400">
+                    {i === 0 ? "-" : diff.toFixed(1)}
+                  </span>
+                  <span className="w-10 text-right text-xs text-gray-500">
+                    {r.rounds}
+                  </span>
                 </button>
               );
             })}
