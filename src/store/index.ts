@@ -51,6 +51,7 @@ type Actions = {
   removeExpense: (sessionId: string, expenseId: string) => void;
   settleSession: (sessionId: string) => void;
   mergeRemoteData: (groups: Group[], sessions: Session[]) => void;
+  replaceGroupData: (group: Group, sessions: Session[]) => void;
 };
 
 export const useAppStore = create<State & Actions>()(
@@ -226,6 +227,19 @@ export const useAppStore = create<State & Actions>()(
           ),
         }));
         syncSettleSession(sessionId);
+      },
+
+      replaceGroupData: (group, sessions) => {
+        set((s) => ({
+          groups: [
+            ...s.groups.filter((g) => g.id !== group.id),
+            group,
+          ],
+          sessions: [
+            ...s.sessions.filter((ses) => ses.groupId !== group.id),
+            ...sessions,
+          ],
+        }));
       },
 
       mergeRemoteData: (remoteGroups, remoteSessions) => {

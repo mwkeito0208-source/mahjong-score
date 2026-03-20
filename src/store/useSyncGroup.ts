@@ -4,11 +4,12 @@ import { fetchGroup, fetchSessions } from "@/lib/supabase-fetch";
 
 /**
  * グループ詳細ページ用の同期フック。
- * ユーザーIDに依存せず、groupId で直接データを取得する。
+ * ユーザーIDに依存せず、groupId で直接データを取得し、
+ * ローカルのそのグループのデータをリモートで完全に置き換える。
  */
 export function useSyncGroup(groupId: string): boolean {
   const [synced, setSynced] = useState(false);
-  const mergeRemoteData = useAppStore((s) => s.mergeRemoteData);
+  const replaceGroupData = useAppStore((s) => s.replaceGroupData);
 
   useEffect(() => {
     if (!groupId) return;
@@ -22,7 +23,7 @@ export function useSyncGroup(groupId: string): boolean {
           fetchSessions([groupId]),
         ]);
         if (!cancelled && group) {
-          mergeRemoteData([group], sessions);
+          replaceGroupData(group, sessions);
         }
       } catch (e) {
         console.error("Failed to sync group:", e);
@@ -36,7 +37,7 @@ export function useSyncGroup(groupId: string): boolean {
     return () => {
       cancelled = true;
     };
-  }, [groupId, mergeRemoteData]);
+  }, [groupId, replaceGroupData]);
 
   return synced;
 }
