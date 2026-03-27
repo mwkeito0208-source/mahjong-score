@@ -43,8 +43,8 @@ type Actions = {
     chipConfig: ChipConfig;
   }) => Session;
   deleteSession: (sessionId: string) => void;
-  addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo) => void;
-  updateRound: (sessionId: string, roundId: string, scores: (number | null)[], tobi?: TobiInfo) => void;
+  addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[]) => void;
+  updateRound: (sessionId: string, roundId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[]) => void;
   deleteRound: (sessionId: string, roundId: string) => void;
   updateChipCounts: (sessionId: string, counts: number[]) => void;
   addExpense: (sessionId: string, expense: Omit<Expense, "id">) => void;
@@ -301,6 +301,25 @@ export const useAppStore = create<State & Actions>()(
     }),
     {
       name: "mahjong-score-storage",
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (e) {
+            console.error("[storage] 保存失敗（容量超過の可能性）:", e);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("storage-quota-exceeded")
+              );
+            }
+          }
+        },
+        removeItem: (name) => localStorage.removeItem(name),
+      },
     }
   )
 );

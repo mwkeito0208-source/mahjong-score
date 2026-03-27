@@ -80,7 +80,7 @@ function NewSessionContent() {
   const memberHistory = getMemberHistory(groups);
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>(
-    group?.members ?? []
+    (group?.members ?? []).length <= 5 ? (group?.members ?? []) : []
   );
   const [showAddMember, setShowAddMember] = useState(false);
 
@@ -178,7 +178,7 @@ function NewSessionContent() {
       <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
         <div className="text-lg font-bold">🀄 新しいセッション</div>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push(groupId ? `/group/${groupId}` : "/")}
           className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
         >
           ← 戻る

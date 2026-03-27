@@ -128,5 +128,8 @@ export function generateShareText(
     text += "\n";
   }
 
+  const totalCheck = finalBalances.reduce((sum, b) => sum + b, 0);
+  text += `\n合計チェック: ${totalCheck >= 0 ? "+" : ""}${totalCheck.toLocaleString()}pt`;
+
   return text;
 }

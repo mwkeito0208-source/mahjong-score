@@ -200,6 +200,7 @@ export function ExpenseSection({
               <label className="mb-1 block font-bold text-gray-700">金額</label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="例: 1200"

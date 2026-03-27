@@ -1,8 +1,10 @@
 import { supabase } from "./supabase";
 import type { Group, Session, Round, Expense } from "./types";
+import { notifySyncError } from "./sync-status";
 
 function warn(label: string, error: unknown) {
   console.warn(`[supabase-sync] ${label}:`, error);
+  notifySyncError(label);
 }
 
 // ── Groups ──────────────────────────────────────────────
@@ -48,39 +50,36 @@ export async function syncUpdateGroup(
 
 export async function syncDeleteGroup(id: string) {
   try {
-    // グループに属するセッションを取得
+    // RPC があれば一括削除を試みる（トランザクション安全）
+    const { error: rpcError } = await supabase.rpc("delete_group_cascade", {
+      group_id: id,
+    });
+
+    if (!rpcError) return;
+
+    // RPC が未定義の場合はフォールバックで手動削除
+    console.warn("[supabase-sync] RPC未定義、手動cascade削除にフォールバック");
+
     const { data: sessions } = await supabase
       .from("sessions")
       .select("id")
       .eq("group_id", id);
 
-    // 各セッションの rounds, expenses を削除
-    for (const ses of sessions ?? []) {
-      try {
-        await supabase.from("rounds").delete().eq("session_id", ses.id);
-      } catch (e) {
-        warn("syncDeleteGroup:rounds", e);
-      }
-      try {
-        await supabase.from("expenses").delete().eq("session_id", ses.id);
-      } catch (e) {
-        warn("syncDeleteGroup:expenses", e);
-      }
+    const sessionIds = (sessions ?? []).map((s) => s.id);
+
+    // rounds と expenses を並列削除
+    if (sessionIds.length > 0) {
+      await Promise.allSettled([
+        supabase.from("rounds").delete().in("session_id", sessionIds),
+        supabase.from("expenses").delete().in("session_id", sessionIds),
+      ]);
     }
 
-    // セッションを削除
-    try {
-      await supabase.from("sessions").delete().eq("group_id", id);
-    } catch (e) {
-      warn("syncDeleteGroup:sessions", e);
-    }
-
-    // メンバーを削除
-    try {
-      await supabase.from("members").delete().eq("group_id", id);
-    } catch (e) {
-      warn("syncDeleteGroup:members", e);
-    }
+    // sessions と members を並列削除
+    await Promise.allSettled([
+      supabase.from("sessions").delete().eq("group_id", id),
+      supabase.from("members").delete().eq("group_id", id),
+    ]);
 
     // グループ本体を削除
     const { error } = await supabase.from("groups").delete().eq("id", id);
@@ -298,10 +297,20 @@ export async function syncAddRound(
   roundNumber: number
 ) {
   try {
+    // DB上の最大round_numberを取得して衝突を防ぐ
+    const { data: existing } = await supabase
+      .from("rounds")
+      .select("round_number")
+      .eq("session_id", sessionId)
+      .order("round_number", { ascending: false })
+      .limit(1);
+    const dbMax = existing?.[0]?.round_number ?? 0;
+    const safeRoundNumber = Math.max(roundNumber, dbMax + 1);
+
     const { error } = await supabase.from("rounds").insert({
       id: round.id,
       session_id: sessionId,
-      round_number: roundNumber,
+      round_number: safeRoundNumber,
       scores: round.scores,
       tobi: round.tobi ?? null,
     });
@@ -314,7 +323,7 @@ export async function syncAddRound(
 export async function syncUpdateRound(
   roundId: string,
   scores: (number | null)[],
-  tobi?: { victim: number; attacker: number }
+  tobi?: { victim: number; attacker: number } | { victim: number; attacker: number }[]
 ) {
   try {
     const { error } = await supabase

@@ -27,7 +27,7 @@ export type ChipConfig = {
 export type Round = {
   id: string;
   scores: (number | null)[];
-  tobi?: TobiInfo;
+  tobi?: TobiInfo | TobiInfo[];
 };
 
 export type Expense = {

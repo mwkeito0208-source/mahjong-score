@@ -23,6 +23,9 @@ export function BreakdownDetails({
     <details className="mb-4 rounded-xl bg-white shadow-md">
       <summary className="cursor-pointer rounded-xl p-4 font-bold text-gray-700 hover:bg-gray-50">
         📋 最終収支の内訳
+        <span className="ml-2 text-xs font-normal text-gray-400">
+          ※五捨六入で計算
+        </span>
       </summary>
       <div className="px-4 pb-4">
         <div className="space-y-2">

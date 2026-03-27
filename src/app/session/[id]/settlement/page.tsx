@@ -158,7 +158,7 @@ export default function SettlementPage() {
       <div className="mb-4 flex items-center justify-between rounded-xl bg-orange-500 p-3 text-white">
         <div className="text-lg font-bold">💰 精算</div>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push(`/session/${sessionId}/score`)}
           className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
         >
           ← 戻る

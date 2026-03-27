@@ -147,6 +147,9 @@ export default function JoinGroupPage() {
           <p className="mt-1 text-sm text-gray-500">
             「{group.name}」にリダイレクトしています...
           </p>
+          <p className="mt-3 text-xs text-gray-400">
+            幹事がセッションを開始したら、スコア入力が始まります
+          </p>
         </div>
       </div>
     );

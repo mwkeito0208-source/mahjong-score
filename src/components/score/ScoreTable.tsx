@@ -1,10 +1,10 @@
-import type { TobiInfo } from "@/lib/score";
+import { type TobiInfo, normalizeTobis } from "@/lib/score";
 
 type RoundRow = {
   id: string | number;
   scores: (number | null)[];
   ranks?: (number | null)[];
-  tobi?: TobiInfo;
+  tobi?: TobiInfo | TobiInfo[];
 };
 
 type Props = {
@@ -56,7 +56,7 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
   const isFivePlayer = members.length === 5;
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow-lg">
+    <div className="overflow-x-auto rounded-xl bg-white shadow-lg">
       {/* メンバーヘッダー */}
       <div className={`grid ${gridClass} bg-green-800 text-sm font-bold text-white`}>
         <div className="p-3 text-center">#</div>
@@ -116,8 +116,9 @@ export function ScoreTable({ members, rounds, totals, money, onRoundTap }: Props
               );
             }
             const rank = round.ranks?.[i] ?? null;
-            const isVictim = round.tobi?.victim === i;
-            const isAttacker = round.tobi?.attacker === i;
+            const tobis = normalizeTobis(round.tobi);
+            const isVictim = tobis.some((t) => t.victim === i);
+            const isAttacker = tobis.some((t) => t.attacker === i);
             const rankBg = rank ? (RANK_BG[rank - 1] ?? "") : "";
             return (
               <div

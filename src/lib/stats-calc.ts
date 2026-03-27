@@ -143,7 +143,10 @@ export function calcOverview(
         }
       }
 
-      if (round.tobi && round.tobi.victim === myIdx) {
+      const tobis = round.tobi
+        ? Array.isArray(round.tobi) ? round.tobi : [round.tobi]
+        : [];
+      if (tobis.some((t) => t.victim === myIdx)) {
         tobiCount++;
       }
     }

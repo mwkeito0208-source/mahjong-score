@@ -128,8 +128,8 @@ export default function Home() {
     [user, groups, mergeRemoteData]
   );
 
-  const handleCreateGroup = (name: string) => {
-    const newGroup = addGroup(name, undefined, user?.id);
+  const handleCreateGroup = (name: string, members?: string[]) => {
+    const newGroup = addGroup(name, members, user?.id);
     setShowCreateGroup(false);
     setSelectedGroup(newGroup);
     setShowInviteLink(true);

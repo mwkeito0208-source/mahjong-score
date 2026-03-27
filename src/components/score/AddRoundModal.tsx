@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
-import type { TobiInfo } from "@/lib/score";
+import { type TobiInfo, normalizeTobis } from "@/lib/score";
 
 type Props = {
   members: string[];
   roundNumber: number;
-  onSave: (scores: (number | null)[], tobi?: TobiInfo) => void;
+  onSave: (scores: (number | null)[], tobi?: TobiInfo[]) => void;
   onClose: () => void;
   /** 編集モード用: 既存のスコア */
   initialScores?: (number | null)[];
   /** 編集モード用: 既存のトビ情報 */
-  initialTobi?: TobiInfo;
+  initialTobi?: TobiInfo | TobiInfo[];
   /** 編集モード用: 削除ハンドラ */
   onDelete?: () => void;
   /** 前回の抜け番インデックス（5人回しローテーション用） */
@@ -77,9 +77,13 @@ export function AddRoundModal({
       ? initialScores.map((s) => s ?? defaultScore)
       : members.map(() => defaultScore)
   );
-  const [tobiAttacker, setTobiAttacker] = useState<number | null>(
-    initialTobi?.attacker ?? null
-  );
+  const [tobiAttackers, setTobiAttackers] = useState<Record<number, number>>(() => {
+    const map: Record<number, number> = {};
+    for (const t of normalizeTobis(initialTobi)) {
+      map[t.victim] = t.attacker;
+    }
+    return map;
+  });
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -118,11 +122,18 @@ export function AddRoundModal({
   );
   const hasTobi = tobiVictims.length > 0;
 
-  // トビが無くなったらattackerをリセット
-  const effectiveAttacker =
-    hasTobi && tobiAttacker !== null && !tobiVictims.includes(tobiAttacker)
-      ? tobiAttacker
-      : null;
+  // 有効なトビ情報を構築（victimが解消されたらattackerをリセット）
+  const effectiveAttackers = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const v of tobiVictims) {
+      const a = tobiAttackers[v];
+      if (a !== undefined && !tobiVictims.includes(a)) {
+        map[v] = a;
+      }
+    }
+    return map;
+  }, [tobiVictims, tobiAttackers]);
+  const allTobiAssigned = hasTobi && tobiVictims.every((v) => effectiveAttackers[v] !== undefined);
 
   const updateScore = useCallback((index: number, delta: number) => {
     setScores((prev) => {
@@ -158,13 +169,27 @@ export function AddRoundModal({
 
   const handleSitOutChange = useCallback(
     (index: number) => {
-      setSitOutIndex((prev) => (prev === index ? null : index));
-      // 抜け番変更時にスコアをリセット
-      setScores(members.map(() => defaultScore));
-      setTobiAttacker(null);
+      setSitOutIndex((prev) => {
+        const newSitOut = prev === index ? null : index;
+        // 抜け番変更時は旧抜け番と新抜け番のスコアだけリセットし、他は保持
+        setScores((prevScores) => {
+          const updated = [...prevScores];
+          // 旧抜け番を復帰させる（デフォルトスコアに）
+          if (prev !== null && prev !== newSitOut) {
+            updated[prev] = defaultScore;
+          }
+          // 新抜け番もデフォルトに（表示はされないが内部値をリセット）
+          if (newSitOut !== null) {
+            updated[newSitOut] = defaultScore;
+          }
+          return updated;
+        });
+        return newSitOut;
+      });
+      setTobiAttackers({});
       setError("");
     },
-    [members, defaultScore]
+    [defaultScore]
   );
 
   const handleSave = () => {
@@ -173,30 +198,31 @@ export function AddRoundModal({
       return;
     }
     if (!isComplete) {
-      setError(`合計が${total.toLocaleString()}点です（${expectedTotal.toLocaleString()}点必要）`);
+      const diffAbs = Math.abs(diff);
+      const diffLabel = diff > 0 ? `残り${diffAbs.toLocaleString()}点` : `${diffAbs.toLocaleString()}点超過`;
+      setError(`合計が${total.toLocaleString()}点です（${expectedTotal.toLocaleString()}点必要 / ${diffLabel}）`);
       return;
     }
-    if (hasTobi && effectiveAttacker === null) {
-      setError("トビが発生しています。飛ばした人を選択してください");
+    if (hasTobi && !allTobiAssigned) {
+      setError("トビが発生しています。飛ばした人を全員分選択してください");
       return;
     }
 
-    const tobi =
-      hasTobi && effectiveAttacker !== null
-        ? { victim: tobiVictims[0], attacker: effectiveAttacker }
-        : undefined;
+    const tobis: TobiInfo[] = tobiVictims
+      .filter((v) => effectiveAttackers[v] !== undefined)
+      .map((v) => ({ victim: v, attacker: effectiveAttackers[v] }));
 
     const finalScores: (number | null)[] = scores.map((s, i) =>
       isFivePlayer && i === sitOutIndex ? null : s
     );
 
-    onSave(finalScores, tobi);
+    onSave(finalScores, tobis.length > 0 ? tobis : undefined);
   };
 
   const handleClose = () => {
     setScores(members.map(() => defaultScore));
     setSitOutIndex(null);
-    setTobiAttacker(null);
+    setTobiAttackers({});
     setError("");
     onClose();
   };
@@ -284,7 +310,7 @@ export function AddRoundModal({
                     <input
                       ref={inputRef}
                       type="number"
-                      inputMode="text"
+                      inputMode="numeric"
                       value={editingValue}
                       onChange={(e) => setEditingValue(e.target.value)}
                       onBlur={commitEditing}
@@ -333,38 +359,49 @@ export function AddRoundModal({
           })}
         </div>
 
-        {/* トビ選択 */}
+        {/* トビ選択（各victimごとにattackerを選択） */}
         {hasTobi && (
           <div className="mt-4 rounded-lg border-2 border-red-200 bg-red-50 p-3">
             <div className="mb-2 text-sm font-bold text-red-700">
               💥 トビ発生！ 飛ばした人は？
             </div>
-            <div className="flex flex-wrap gap-2">
-              {members.map((name, i) => {
-                if (tobiVictims.includes(i)) return null;
-                if (isFivePlayer && i === sitOutIndex) return null;
-                const selected = effectiveAttacker === i;
-                return (
-                  <button
-                    key={name}
-                    onClick={() => setTobiAttacker(i)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                      selected
-                        ? "bg-red-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-red-100"
-                    }`}
-                  >
-                    {name}
-                  </button>
-                );
-              })}
-            </div>
-            {effectiveAttacker !== null && (
-              <div className="mt-2 text-xs text-red-600">
-                {members[tobiVictims[0]]} → {members[effectiveAttacker]}{" "}
-                に飛び賞 (±10)
+            {tobiVictims.map((victimIdx) => (
+              <div key={victimIdx} className="mb-2 last:mb-0">
+                {tobiVictims.length > 1 && (
+                  <div className="mb-1 text-xs text-red-600">
+                    {members[victimIdx]} を飛ばしたのは？
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {members.map((name, i) => {
+                    if (tobiVictims.includes(i)) return null;
+                    if (isFivePlayer && i === sitOutIndex) return null;
+                    const selected = effectiveAttackers[victimIdx] === i;
+                    return (
+                      <button
+                        key={name}
+                        onClick={() =>
+                          setTobiAttackers((prev) => ({ ...prev, [victimIdx]: i }))
+                        }
+                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                          selected
+                            ? "bg-red-600 text-white"
+                            : "bg-white text-gray-700 hover:bg-red-100"
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {effectiveAttackers[victimIdx] !== undefined && (
+                  <div className="mt-1 text-xs text-red-600">
+                    {members[victimIdx]} → {members[effectiveAttackers[victimIdx]]}{" "}
+                    に飛び賞 (±10)
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </div>
         )}
 

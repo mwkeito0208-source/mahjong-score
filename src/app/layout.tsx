@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { AuthProvider } from "@/components/AuthProvider";
+import { SyncToast } from "@/components/SyncToast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "麻雀スコア",
+  },
+  icons: {
+    apple: "/icons/icon-192x192.png",
   },
 };
 
@@ -44,7 +48,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ServiceWorkerRegister />
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <SyncToast />
+        </AuthProvider>
       </body>
     </html>
   );

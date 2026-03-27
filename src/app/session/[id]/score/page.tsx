@@ -18,6 +18,7 @@ import { useAppStore } from "@/store";
 import { getSession, getGroup } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
 import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
+import { useSessionRealtime } from "@/store/useSessionRealtime";
 
 const RATE_LABELS: Record<number, string> = {
   0: "ノーレート",
@@ -47,9 +48,12 @@ export default function SessionPage() {
 
   const session = getSession(sessions, sessionId);
   const group = session ? getGroup(groups, session.groupId) : undefined;
+  const { hasRemoteChange, dismiss: dismissRemoteChange } = useSessionRealtime(sessionId);
 
   const [showInputModal, setShowInputModal] = useState(false);
   const [editingRoundIndex, setEditingRoundIndex] = useState<number | null>(null);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const deleteSession = useAppStore((s) => s.deleteSession);
 
   if (!hydrated || (!session && !synced)) {
     return (
@@ -121,12 +125,12 @@ export default function SessionPage() {
     };
   });
 
-  const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo) => {
+  const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo[]) => {
     addRound(session.id, rawScores, tobi);
     setShowInputModal(false);
   };
 
-  const handleEditRound = (rawScores: (number | null)[], tobi?: TobiInfo) => {
+  const handleEditRound = (rawScores: (number | null)[], tobi?: TobiInfo[]) => {
     if (editingRoundIndex === null) return;
     const round = session.rounds[editingRoundIndex];
     updateRound(session.id, round.id, rawScores, tobi);
@@ -163,6 +167,27 @@ export default function SessionPage() {
         </button>
       </div>
 
+      {/* 他ユーザーによる変更通知 */}
+      {hasRemoteChange && (
+        <div className="mb-3 flex items-center justify-between rounded-xl bg-yellow-50 p-3 text-sm text-yellow-800 shadow">
+          <span>他の端末で変更がありました。ページを再読み込みしてください。</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded bg-yellow-600 px-3 py-1 text-xs font-bold text-white"
+            >
+              再読み込み
+            </button>
+            <button
+              onClick={dismissRemoteChange}
+              className="text-xs text-yellow-600"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* スコアテーブル */}
       <ScoreTable
         members={session.members}
@@ -187,6 +212,45 @@ export default function SessionPage() {
         >
           💰 精算を見る
         </Link>
+
+        {!showRestartConfirm ? (
+          <button
+            onClick={() => {
+              if (session.rounds.length === 0) {
+                deleteSession(session.id);
+                router.push(`/session/new?groupId=${session.groupId}`);
+              } else {
+                setShowRestartConfirm(true);
+              }
+            }}
+            className="w-full rounded-xl border border-gray-300 bg-white py-3 text-sm text-gray-500 hover:bg-gray-50"
+          >
+            🔄 メンバーを変更して作り直す
+          </button>
+        ) : (
+          <div className="rounded-xl bg-red-50 p-4">
+            <p className="mb-2 text-center text-sm font-bold text-red-600">
+              {session.rounds.length}半荘分のデータが削除されます
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="flex-1 rounded-lg bg-gray-200 py-2 text-sm text-gray-700"
+              >
+                やめる
+              </button>
+              <button
+                onClick={() => {
+                  deleteSession(session.id);
+                  router.push(`/session/new?groupId=${session.groupId}`);
+                }}
+                className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-bold text-white"
+              >
+                作り直す
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 新規入力モーダル */}

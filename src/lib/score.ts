@@ -43,13 +43,19 @@ export function calculateFinalScore(
   return baseScore + uma[rank - 1];
 }
 
+/** 後方互換: 単一TobiInfoを配列に正規化 */
+export function normalizeTobis(tobi?: TobiInfo | TobiInfo[]): TobiInfo[] {
+  if (!tobi) return [];
+  return Array.isArray(tobi) ? tobi : [tobi];
+}
+
 /** 半荘の生スコアから最終スコアを計算（オカ・トビ・抜け番対応） */
 export function calculateRoundScores(
   rawScores: (number | null)[],
   returnPoints: number = 30,
   uma: number[] = [30, 10, -10, -30],
   topiPenalty: number = 10,
-  tobi?: TobiInfo,
+  tobi?: TobiInfo | TobiInfo[],
   startPoints: number = 25
 ): number[] {
   // 抜け番(null)を除外して4人分で計算
@@ -61,14 +67,22 @@ export function calculateRoundScores(
 
   const rounded = activeScores.map(roundScore);
 
+  // ウマ合計がゼロであることを検証（カスタムウマ対応時の安全策）
+  const activeUma = uma.slice(0, activeScores.length);
+  const umaSum = activeUma.reduce((sum, u) => sum + u, 0);
+  if (umaSum !== 0) {
+    console.warn(`[score] ウマ合計が0ではありません: ${umaSum}`, activeUma);
+  }
+
   // 五捨六入の丸め誤差を1位が負担（サムゼロ補正）
+  // 素点（丸め前）で1位を判定してから補正する
   const expectedTotal = startPoints * activeScores.length;
   const roundedTotal = rounded.reduce((sum, s) => sum + s, 0);
-  const ranks = getRanks(rounded);
-  const firstPlaceIdx = ranks.indexOf(1);
+  const rawRanks = getRanks(activeScores);
+  const firstPlaceIdx = rawRanks.indexOf(1);
   rounded[firstPlaceIdx] += expectedTotal - roundedTotal;
 
-  const activeUma = uma.slice(0, activeScores.length);
+  const ranks = getRanks(rounded);
   const activeFinals = rounded.map((score, i) =>
     calculateFinalScore(score, ranks[i], returnPoints, activeUma)
   );
@@ -80,9 +94,9 @@ export function calculateRoundScores(
   }
 
   // トビ賞の適用（activeIndices内でのインデックスに変換）
-  if (tobi) {
-    const victimActive = activeIndices.indexOf(tobi.victim);
-    const attackerActive = activeIndices.indexOf(tobi.attacker);
+  for (const t of normalizeTobis(tobi)) {
+    const victimActive = activeIndices.indexOf(t.victim);
+    const attackerActive = activeIndices.indexOf(t.attacker);
     if (victimActive !== -1 && attackerActive !== -1) {
       activeFinals[victimActive] -= topiPenalty;
       activeFinals[attackerActive] += topiPenalty;
@@ -100,7 +114,7 @@ export function calculateRoundScores(
 
 export type RoundData = {
   scores: (number | null)[];
-  tobi?: TobiInfo;
+  tobi?: TobiInfo | TobiInfo[];
 };
 
 /** 全半荘の小計（オカ・トビ対応） */

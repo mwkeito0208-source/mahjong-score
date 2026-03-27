@@ -1,5 +1,12 @@
-const CACHE_NAME = "mahjong-score-v1";
+const CACHE_NAME = "mahjong-score-v2";
 const OFFLINE_URL = "/";
+
+// キャッシュ対象のパターン
+const CACHEABLE_PATTERNS = [
+  /\/_next\/static\//,   // Next.js静的アセット（JS/CSS）
+  /\/icons\//,            // アイコン
+  /\/manifest\.json$/,    // PWAマニフェスト
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,11 +29,40 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  // ナビゲーションリクエスト: network-first、失敗時はキャッシュ済みのホームにフォールバック
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match(OFFLINE_URL).then((response) => response)
+      fetch(event.request)
+        .then((response) => {
+          // ナビゲーション成功時にキャッシュを更新
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then(
+            (cached) => cached || caches.match(OFFLINE_URL)
+          )
+        )
+    );
+    return;
+  }
+
+  // 静的アセット: cache-first
+  if (CACHEABLE_PATTERNS.some((p) => p.test(url.pathname))) {
+    event.respondWith(
+      caches.match(event.request).then(
+        (cached) =>
+          cached ||
+          fetch(event.request).then((response) => {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            return response;
+          })
       )
     );
+    return;
   }
 });
