@@ -37,14 +37,17 @@ export function ChipInputModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6">
+      <div className="flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white">
+        <div className="flex-shrink-0 px-6 pt-6">
         <h3 className="mb-5 text-center text-lg font-bold text-gray-800">
           🎰 最終チップ枚数
         </h3>
         <p className="mb-4 text-center text-sm text-gray-500">
           スタート: {startChips}枚 × {members.length}人 = {expectedTotal}枚
         </p>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-6">
         {members.map((name, i) => {
           const diff = temp[i] - startChips;
           return (
@@ -118,6 +121,9 @@ export function ChipInputModal({
           )}
         </div>
 
+        </div>{/* /flex-1 scrollable */}
+
+        <div className="flex-shrink-0 px-6 pb-6 pt-3">
         <div className="flex gap-3">
           <button
             onClick={onClose}
@@ -137,6 +143,7 @@ export function ChipInputModal({
             保存
           </button>
         </div>
+        </div>{/* /flex-shrink-0 footer */}
       </div>
     </div>
   );

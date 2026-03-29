@@ -237,8 +237,9 @@ export function AddRoundModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white">
+        <div className="flex-shrink-0 p-5 pb-0">
         <h3 className="mb-4 text-center text-lg font-bold text-green-900">
           {isEditing ? `${roundNumber}半荘目を修正` : `${roundNumber}半荘目の結果`}
         </h3>
@@ -267,6 +268,9 @@ export function AddRoundModal({
           </button>
         </div>
 
+        </div>{/* /flex-shrink-0 header */}
+
+        <div className="flex-1 overflow-y-auto px-5">
         {/* 抜け番選択（5人の場合のみ） */}
         {isFivePlayer && (
           <div className="mb-4 rounded-lg border-2 border-gray-200 bg-gray-50 p-3">
@@ -487,6 +491,9 @@ export function AddRoundModal({
           </div>
         )}
 
+        </div>{/* /flex-1 scrollable */}
+
+        <div className="flex-shrink-0 px-5 pb-5 pt-3">
         <div className="flex gap-3">
           <button
             onClick={handleClose}
@@ -501,6 +508,7 @@ export function AddRoundModal({
             {isEditing ? "更新" : "保存"}
           </button>
         </div>
+        </div>{/* /flex-shrink-0 footer */}
       </div>
     </div>
   );
