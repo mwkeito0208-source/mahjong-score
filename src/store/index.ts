@@ -43,8 +43,8 @@ type Actions = {
     chipConfig: ChipConfig;
   }) => Session;
   deleteSession: (sessionId: string) => void;
-  addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[]) => void;
-  updateRound: (sessionId: string, roundId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[]) => void;
+  addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[], inputMode?: "raw" | "points") => void;
+  updateRound: (sessionId: string, roundId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[], inputMode?: "raw" | "points") => void;
   deleteRound: (sessionId: string, roundId: string) => void;
   updateChipCounts: (sessionId: string, counts: number[]) => void;
   addExpense: (sessionId: string, expense: Omit<Expense, "id">) => void;
@@ -123,11 +123,12 @@ export const useAppStore = create<State & Actions>()(
         syncDeleteSession(sessionId);
       },
 
-      addRound: (sessionId, scores, tobi) => {
+      addRound: (sessionId, scores, tobi, inputMode) => {
         const round: Round = {
           id: crypto.randomUUID(),
           scores,
           tobi,
+          inputMode: inputMode === "points" ? "points" : undefined,
         };
         set((s) => ({
           sessions: s.sessions.map((ses) =>
@@ -141,20 +142,21 @@ export const useAppStore = create<State & Actions>()(
         syncAddRound(sessionId, round, roundNumber);
       },
 
-      updateRound: (sessionId, roundId, scores, tobi) => {
+      updateRound: (sessionId, roundId, scores, tobi, inputMode) => {
+        const roundInputMode = inputMode === "points" ? "points" as const : undefined;
         set((s) => ({
           sessions: s.sessions.map((ses) =>
             ses.id === sessionId
               ? {
                   ...ses,
                   rounds: ses.rounds.map((r) =>
-                    r.id === roundId ? { ...r, scores, tobi } : r
+                    r.id === roundId ? { ...r, scores, tobi, inputMode: roundInputMode } : r
                   ),
                 }
               : ses
           ),
         }));
-        syncUpdateRound(roundId, scores, tobi);
+        syncUpdateRound(roundId, scores, tobi, roundInputMode);
       },
 
       deleteRound: (sessionId, roundId) => {

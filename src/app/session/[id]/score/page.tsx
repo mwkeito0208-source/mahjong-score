@@ -85,6 +85,7 @@ export default function SessionPage() {
   const roundDataList: RoundData[] = session.rounds.map((r) => ({
     scores: r.scores,
     tobi: r.tobi,
+    inputMode: r.inputMode,
   }));
   const totals =
     roundDataList.length > 0
@@ -105,9 +106,28 @@ export default function SessionPage() {
       settings.uma,
       settings.tobiPenalty,
       round.tobi,
-      settings.startPoints
+      settings.startPoints,
+      round.inputMode
     );
-    // 順位: 五捨六入した素点から算出
+
+    // ポイント入力モード: スコアから順位を算出
+    if (round.inputMode === "points") {
+      const activeScores = round.scores.filter((s): s is number => s !== null);
+      const activeRanks = getRanks(activeScores);
+      let activeIdx = 0;
+      const ranks = round.scores.map((s) => {
+        if (s === null) return null;
+        return activeRanks[activeIdx++];
+      });
+      return {
+        id: round.id,
+        scores: finalScores.map((s, i) => (round.scores[i] === null ? null : s)),
+        ranks,
+        tobi: round.tobi,
+      };
+    }
+
+    // 素点入力モード: 五捨六入した素点から順位を算出
     const rounded = round.scores.map((s) => (s !== null ? roundScore(s) : null));
     const activeRounded = rounded.filter((s): s is number => s !== null);
     const activeRanks = getRanks(activeRounded);
@@ -125,15 +145,15 @@ export default function SessionPage() {
     };
   });
 
-  const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo[]) => {
-    addRound(session.id, rawScores, tobi);
+  const handleAddRound = (rawScores: (number | null)[], tobi?: TobiInfo[], inputMode?: "raw" | "points") => {
+    addRound(session.id, rawScores, tobi, inputMode);
     setShowInputModal(false);
   };
 
-  const handleEditRound = (rawScores: (number | null)[], tobi?: TobiInfo[]) => {
+  const handleEditRound = (rawScores: (number | null)[], tobi?: TobiInfo[], inputMode?: "raw" | "points") => {
     if (editingRoundIndex === null) return;
     const round = session.rounds[editingRoundIndex];
-    updateRound(session.id, round.id, rawScores, tobi);
+    updateRound(session.id, round.id, rawScores, tobi, inputMode);
     setEditingRoundIndex(null);
   };
 
@@ -277,6 +297,7 @@ export default function SessionPage() {
           roundNumber={editingRoundIndex + 1}
           initialScores={session.rounds[editingRoundIndex].scores}
           initialTobi={session.rounds[editingRoundIndex].tobi}
+          initialInputMode={session.rounds[editingRoundIndex].inputMode}
           onSave={handleEditRound}
           onClose={() => setEditingRoundIndex(null)}
           onDelete={handleDeleteRound}

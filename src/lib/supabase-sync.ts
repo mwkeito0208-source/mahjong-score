@@ -313,6 +313,7 @@ export async function syncAddRound(
       round_number: safeRoundNumber,
       scores: round.scores,
       tobi: round.tobi ?? null,
+      input_mode: round.inputMode ?? null,
     });
     if (error) throw error;
   } catch (e) {
@@ -323,12 +324,13 @@ export async function syncAddRound(
 export async function syncUpdateRound(
   roundId: string,
   scores: (number | null)[],
-  tobi?: { victim: number; attacker: number } | { victim: number; attacker: number }[]
+  tobi?: { victim: number; attacker: number } | { victim: number; attacker: number }[],
+  inputMode?: "raw" | "points"
 ) {
   try {
     const { error } = await supabase
       .from("rounds")
-      .update({ scores, tobi: tobi ?? null })
+      .update({ scores, tobi: tobi ?? null, input_mode: inputMode ?? null })
       .eq("id", roundId);
     if (error) throw error;
   } catch (e) {

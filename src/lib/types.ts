@@ -28,6 +28,8 @@ export type Round = {
   id: string;
   scores: (number | null)[];
   tobi?: TobiInfo | TobiInfo[];
+  /** 入力モード: "raw"=素点入力（デフォルト）, "points"=ポイント直接入力 */
+  inputMode?: "raw" | "points";
 };
 
 export type Expense = {

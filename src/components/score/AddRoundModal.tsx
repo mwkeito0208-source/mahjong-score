@@ -3,15 +3,19 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { type TobiInfo, normalizeTobis } from "@/lib/score";
 
+type InputMode = "raw" | "points";
+
 type Props = {
   members: string[];
   roundNumber: number;
-  onSave: (scores: (number | null)[], tobi?: TobiInfo[]) => void;
+  onSave: (scores: (number | null)[], tobi?: TobiInfo[], inputMode?: InputMode) => void;
   onClose: () => void;
   /** 編集モード用: 既存のスコア */
   initialScores?: (number | null)[];
   /** 編集モード用: 既存のトビ情報 */
   initialTobi?: TobiInfo | TobiInfo[];
+  /** 編集モード用: 既存の入力モード */
+  initialInputMode?: InputMode;
   /** 編集モード用: 削除ハンドラ */
   onDelete?: () => void;
   /** 前回の抜け番インデックス（5人回しローテーション用） */
@@ -20,7 +24,8 @@ type Props = {
   startPoints?: number;
 };
 
-const STEPS = [10000, 1000, 100] as const;
+const RAW_STEPS = [10000, 1000, 100] as const;
+const POINTS_STEPS = [10, 5, 1] as const;
 
 const RANK_BADGE = [
   "bg-yellow-400 text-yellow-900",
@@ -53,13 +58,17 @@ export function AddRoundModal({
   onClose,
   initialScores,
   initialTobi,
+  initialInputMode,
   onDelete,
   lastSitOutIndex,
   startPoints = 25,
 }: Props) {
   const isEditing = !!initialScores;
   const isFivePlayer = members.length === 5;
-  const defaultScore = startPoints * 1000;
+  const [inputMode, setInputMode] = useState<InputMode>(initialInputMode ?? "raw");
+  const isPointsMode = inputMode === "points";
+  const defaultScore = isPointsMode ? 0 : startPoints * 1000;
+  const steps = isPointsMode ? POINTS_STEPS : RAW_STEPS;
 
   // 初期値を算出（編集時は既存の抜け番、新規時は前回の次の人をローテーション）
   const initSitOut = initialScores
@@ -93,7 +102,7 @@ export function AddRoundModal({
   // 抜け番以外のスコアだけで合計・判定
   const activeScores = scores.filter((_, i) => !isFivePlayer || i !== sitOutIndex);
   const activePlayerCount = isFivePlayer ? 4 : members.length;
-  const expectedTotal = defaultScore * activePlayerCount;
+  const expectedTotal = isPointsMode ? 0 : (startPoints * 1000) * activePlayerCount;
   const total = activeScores.reduce((a, b) => a + b, 0);
   const diff = expectedTotal - total;
   const isComplete = total === expectedTotal;
@@ -120,7 +129,7 @@ export function AddRoundModal({
       ),
     [scores, isFivePlayer, sitOutIndex]
   );
-  const hasTobi = tobiVictims.length > 0;
+  const hasTobi = !isPointsMode && tobiVictims.length > 0;
 
   // 有効なトビ情報を構築（victimが解消されたらattackerをリセット）
   const effectiveAttackers = useMemo(() => {
@@ -167,6 +176,14 @@ export function AddRoundModal({
     setError("");
   }, [editingIndex, editingValue]);
 
+  const handleModeChange = useCallback((mode: InputMode) => {
+    setInputMode(mode);
+    const newDefault = mode === "points" ? 0 : startPoints * 1000;
+    setScores(members.map(() => newDefault));
+    setTobiAttackers({});
+    setError("");
+  }, [members, startPoints]);
+
   const handleSitOutChange = useCallback(
     (index: number) => {
       setSitOutIndex((prev) => {
@@ -198,9 +215,13 @@ export function AddRoundModal({
       return;
     }
     if (!isComplete) {
-      const diffAbs = Math.abs(diff);
-      const diffLabel = diff > 0 ? `残り${diffAbs.toLocaleString()}点` : `${diffAbs.toLocaleString()}点超過`;
-      setError(`合計が${total.toLocaleString()}点です（${expectedTotal.toLocaleString()}点必要 / ${diffLabel}）`);
+      if (isPointsMode) {
+        setError(`合計が0になる必要があります（現在: ${total >= 0 ? "+" : ""}${total}）`);
+      } else {
+        const diffAbs = Math.abs(diff);
+        const diffLabel = diff > 0 ? `残り${diffAbs.toLocaleString()}点` : `${diffAbs.toLocaleString()}点超過`;
+        setError(`合計が${total.toLocaleString()}点です（${expectedTotal.toLocaleString()}点必要 / ${diffLabel}）`);
+      }
       return;
     }
     if (hasTobi && !allTobiAssigned) {
@@ -208,15 +229,17 @@ export function AddRoundModal({
       return;
     }
 
-    const tobis: TobiInfo[] = tobiVictims
-      .filter((v) => effectiveAttackers[v] !== undefined)
-      .map((v) => ({ victim: v, attacker: effectiveAttackers[v] }));
+    const tobis: TobiInfo[] = isPointsMode
+      ? []
+      : tobiVictims
+          .filter((v) => effectiveAttackers[v] !== undefined)
+          .map((v) => ({ victim: v, attacker: effectiveAttackers[v] }));
 
     const finalScores: (number | null)[] = scores.map((s, i) =>
       isFivePlayer && i === sitOutIndex ? null : s
     );
 
-    onSave(finalScores, tobis.length > 0 ? tobis : undefined);
+    onSave(finalScores, tobis.length > 0 ? tobis : undefined, inputMode);
   };
 
   const handleClose = () => {
@@ -233,6 +256,30 @@ export function AddRoundModal({
         <h3 className="mb-4 text-center text-lg font-bold text-green-900">
           {isEditing ? `${roundNumber}半荘目を修正` : `${roundNumber}半荘目の結果`}
         </h3>
+
+        {/* 入力モード切替 */}
+        <div className="mb-4 flex rounded-lg bg-gray-100 p-1">
+          <button
+            onClick={() => inputMode !== "raw" && handleModeChange("raw")}
+            className={`flex-1 rounded-md py-2 text-sm font-bold transition-all ${
+              !isPointsMode
+                ? "bg-white text-green-900 shadow"
+                : "text-gray-500"
+            }`}
+          >
+            素点入力
+          </button>
+          <button
+            onClick={() => inputMode !== "points" && handleModeChange("points")}
+            className={`flex-1 rounded-md py-2 text-sm font-bold transition-all ${
+              isPointsMode
+                ? "bg-white text-green-900 shadow"
+                : "text-gray-500"
+            }`}
+          >
+            ポイント入力
+          </button>
+        </div>
 
         {/* 抜け番選択（5人の場合のみ） */}
         {isFivePlayer && (
@@ -292,15 +339,17 @@ export function AddRoundModal({
                 {/* 名前 + 順位 + スコア */}
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${RANK_BADGE[fullRanks[i] - 1]}`}
-                    >
-                      {fullRanks[i]}
-                    </span>
+                    {!isPointsMode && (
+                      <span
+                        className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${RANK_BADGE[fullRanks[i] - 1]}`}
+                      >
+                        {fullRanks[i]}
+                      </span>
+                    )}
                     <span className="text-sm font-bold text-gray-700">
                       {name}
                     </span>
-                    {isVictim && (
+                    {!isPointsMode && isVictim && (
                       <span className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
                         トビ
                       </span>
@@ -330,14 +379,16 @@ export function AddRoundModal({
                         scores[i] < 0 ? "text-red-600" : "text-gray-900"
                       }`}
                     >
-                      {scores[i].toLocaleString()}
+                      {isPointsMode
+                        ? `${scores[i] >= 0 ? "+" : ""}${scores[i]}`
+                        : scores[i].toLocaleString()}
                     </button>
                   )}
                 </div>
 
                 {/* +/- ボタン行 */}
                 <div className="flex items-center justify-end gap-1">
-                  {STEPS.map((step) => (
+                  {steps.map((step) => (
                     <div key={step} className="flex gap-0.5">
                       <button
                         onClick={() => updateScore(i, -step)}
@@ -412,16 +463,18 @@ export function AddRoundModal({
             <span
               className={`font-bold ${isComplete ? "text-green-700" : "text-red-700"}`}
             >
-              {total.toLocaleString()}点
+              {isPointsMode ? total : `${total.toLocaleString()}点`}
             </span>
             {isComplete && <span className="ml-2 text-green-700">✓</span>}
           </div>
           {!isComplete && (
             <div className="mt-1 text-center text-sm">
               <span className="text-gray-500">
-                {diff > 0
-                  ? `残り: ${diff.toLocaleString()}点`
-                  : `超過: ${Math.abs(diff).toLocaleString()}点`}
+                {isPointsMode
+                  ? `合計が0になる必要があります（現在: ${total >= 0 ? "+" : ""}${total}）`
+                  : diff > 0
+                    ? `残り: ${diff.toLocaleString()}点`
+                    : `超過: ${Math.abs(diff).toLocaleString()}点`}
               </span>
             </div>
           )}

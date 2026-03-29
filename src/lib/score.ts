@@ -56,8 +56,14 @@ export function calculateRoundScores(
   uma: number[] = [30, 10, -10, -30],
   topiPenalty: number = 10,
   tobi?: TobiInfo | TobiInfo[],
-  startPoints: number = 25
+  startPoints: number = 25,
+  inputMode?: "raw" | "points"
 ): number[] {
+  // ポイント入力モード: スコアはそのまま最終ポイント
+  if (inputMode === "points") {
+    return rawScores.map((s) => s ?? 0);
+  }
+
   // 抜け番(null)を除外して4人分で計算
   const activeIndices = rawScores.reduce<number[]>(
     (acc, s, i) => (s !== null ? [...acc, i] : acc),
@@ -115,6 +121,7 @@ export function calculateRoundScores(
 export type RoundData = {
   scores: (number | null)[];
   tobi?: TobiInfo | TobiInfo[];
+  inputMode?: "raw" | "points";
 };
 
 /** 全半荘の小計（オカ・トビ対応） */
@@ -134,7 +141,8 @@ export function calculateTotals(
       uma,
       tobiPenalty,
       round.tobi,
-      startPoints
+      startPoints,
+      round.inputMode
     );
     scores.forEach((score, i) => {
       totals[i] += score;

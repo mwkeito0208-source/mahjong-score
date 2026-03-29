@@ -144,7 +144,7 @@ export async function fetchSessions(groupIds?: string[]): Promise<Session[]> {
   const [roundsRes, expensesRes] = await Promise.all([
     supabase
       .from("rounds")
-      .select("id, session_id, round_number, scores, tobi")
+      .select("id, session_id, round_number, scores, tobi, input_mode")
       .in("session_id", sessionIds)
       .order("round_number", { ascending: true }),
     supabase
@@ -163,6 +163,7 @@ export async function fetchSessions(groupIds?: string[]): Promise<Session[]> {
       id: r.id,
       scores: r.scores,
       tobi: r.tobi ?? undefined,
+      inputMode: r.input_mode ?? undefined,
     });
     roundsBySession.set(r.session_id, list);
   }
