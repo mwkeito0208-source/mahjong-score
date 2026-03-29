@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { type TobiInfo, normalizeTobis } from "@/lib/score";
 
 type InputMode = "raw" | "points";
@@ -95,9 +95,6 @@ export function AddRoundModal({
   });
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingValue, setEditingValue] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // 抜け番以外のスコアだけで合計・判定
   const activeScores = scores.filter((_, i) => !isFivePlayer || i !== sitOutIndex);
@@ -153,28 +150,17 @@ export function AddRoundModal({
     setError("");
   }, []);
 
-  const startEditing = useCallback((index: number, currentScore: number) => {
-    setEditingIndex(index);
-    setEditingValue(String(currentScore));
-    setError("");
-    // フォーカスは次のレンダー後に設定
-    setTimeout(() => inputRef.current?.select(), 0);
-  }, []);
-
-  const commitEditing = useCallback(() => {
-    if (editingIndex === null) return;
-    const parsed = parseInt(editingValue, 10);
+  const handleScoreInput = useCallback((index: number, value: string) => {
+    const parsed = parseInt(value, 10);
     if (!isNaN(parsed)) {
       setScores((prev) => {
         const updated = [...prev];
-        updated[editingIndex] = parsed;
+        updated[index] = parsed;
         return updated;
       });
     }
-    setEditingIndex(null);
-    setEditingValue("");
     setError("");
-  }, [editingIndex, editingValue]);
+  }, []);
 
   const handleModeChange = useCallback((mode: InputMode) => {
     setInputMode(mode);
@@ -355,35 +341,16 @@ export function AddRoundModal({
                       </span>
                     )}
                   </div>
-                  {editingIndex === i ? (
-                    <input
-                      ref={inputRef}
-                      type="number"
-                      inputMode="numeric"
-                      value={editingValue}
-                      onChange={(e) => setEditingValue(e.target.value)}
-                      onBlur={commitEditing}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          commitEditing();
-                        }
-                      }}
-                      className="w-28 rounded border border-green-400 bg-white px-2 py-1 text-right text-lg font-bold tabular-nums text-gray-900 outline-none focus:ring-2 focus:ring-green-400"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => startEditing(i, scores[i])}
-                      className={`rounded px-2 py-1 text-right text-lg font-bold tabular-nums hover:bg-gray-200 ${
-                        scores[i] < 0 ? "text-red-600" : "text-gray-900"
-                      }`}
-                    >
-                      {isPointsMode
-                        ? `${scores[i] >= 0 ? "+" : ""}${scores[i]}`
-                        : scores[i].toLocaleString()}
-                    </button>
-                  )}
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={scores[i]}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleScoreInput(i, e.target.value)}
+                    className={`w-28 rounded border border-transparent bg-transparent px-2 py-1 text-right text-lg font-bold tabular-nums outline-none focus:border-green-400 focus:bg-white focus:ring-2 focus:ring-green-400 ${
+                      scores[i] < 0 ? "text-red-600" : "text-gray-900"
+                    }`}
+                  />
                 </div>
 
                 {/* +/- ボタン行 */}
