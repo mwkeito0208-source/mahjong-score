@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal, Button } from "@/components/ui";
 
 type Props = {
   members: string[];
@@ -36,115 +37,79 @@ export function ChipInputModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white">
-        <div className="flex-shrink-0 px-6 pt-6">
-        <h3 className="mb-5 text-center text-lg font-bold text-gray-800">
-          🎰 最終チップ枚数
-        </h3>
-        <p className="mb-4 text-center text-sm text-gray-500">
-          スタート: {startChips}枚 × {members.length}人 = {expectedTotal}枚
-        </p>
+    <Modal
+      open
+      onClose={onClose}
+      title="最終チップ枚数"
+      size="sm"
+      footer={
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" fullWidth onClick={onClose}>キャンセル</Button>
+          <Button variant="primary" size="md" fullWidth disabled={!isValid} onClick={() => onSave([...temp])}>
+            保存する
+          </Button>
         </div>
+      }
+    >
+      <p className="text-sm text-[var(--ink-muted)]">
+        スタート <span className="num-mono">{startChips}</span> 枚 × {members.length}人 = 合計 <span className="num-mono">{expectedTotal}</span> 枚
+      </p>
 
-        <div className="flex-1 overflow-y-auto px-6">
+      <div className="mt-3 space-y-3">
         {members.map((name, i) => {
           const diff = temp[i] - startChips;
           return (
-            <div key={name} className="mb-4">
+            <div key={name}>
               <div className="mb-1 flex items-center justify-between">
-                <label className="font-bold text-gray-700">{name}</label>
+                <label className="text-sm font-medium text-[var(--ink)]">{name}</label>
                 <span
-                  className={`text-sm font-medium ${
-                    diff > 0
-                      ? "text-green-600"
-                      : diff < 0
-                        ? "text-red-600"
-                        : "text-gray-400"
+                  className={`num-mono tabular text-xs font-medium ${
+                    diff > 0 ? "text-[var(--positive)]" : diff < 0 ? "text-[var(--negative)]" : "text-[var(--ink-subtle)]"
                   }`}
                 >
-                  {diff >= 0 ? "+" : ""}
-                  {diff}枚
+                  {diff >= 0 ? "+" : ""}{diff}枚
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => adjust(i, -5)}
-                  className="rounded-lg bg-red-50 px-2 py-2.5 text-sm font-bold text-red-600 active:bg-red-100"
-                >
-                  -5
-                </button>
+                  className="rounded-[var(--radius-sm)] border border-[var(--line)] px-2 py-2 text-xs font-medium text-[var(--negative)] hover:bg-[var(--surface-2)]"
+                >−5</button>
                 <button
                   onClick={() => adjust(i, -1)}
-                  className="rounded-lg bg-red-50 px-2 py-2.5 text-sm font-bold text-red-600 active:bg-red-100"
-                >
-                  -1
-                </button>
+                  className="rounded-[var(--radius-sm)] border border-[var(--line)] px-2 py-2 text-xs font-medium text-[var(--negative)] hover:bg-[var(--surface-2)]"
+                >−1</button>
                 <input
                   type="number"
                   inputMode="numeric"
                   value={temp[i]}
                   onChange={(e) => update(i, e.target.value)}
-                  className="w-full flex-1 rounded-lg border-2 border-gray-300 p-2.5 text-center text-lg font-bold focus:border-green-500 focus:outline-none"
+                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--line-strong)] bg-[var(--surface)] px-2 py-2 text-center num-mono tabular text-base font-bold text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
                 />
                 <button
                   onClick={() => adjust(i, 1)}
-                  className="rounded-lg bg-blue-50 px-2 py-2.5 text-sm font-bold text-blue-600 active:bg-blue-100"
-                >
-                  +1
-                </button>
+                  className="rounded-[var(--radius-sm)] border border-[var(--line)] px-2 py-2 text-xs font-medium text-[var(--positive)] hover:bg-[var(--surface-2)]"
+                >+1</button>
                 <button
                   onClick={() => adjust(i, 5)}
-                  className="rounded-lg bg-blue-50 px-2 py-2.5 text-sm font-bold text-blue-600 active:bg-blue-100"
-                >
-                  +5
-                </button>
+                  className="rounded-[var(--radius-sm)] border border-[var(--line)] px-2 py-2 text-xs font-medium text-[var(--positive)] hover:bg-[var(--surface-2)]"
+                >+5</button>
               </div>
             </div>
           );
         })}
-
-        {/* 合計チェック */}
-        <div
-          className={`mb-4 rounded-lg p-3 text-center ${
-            isValid ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-          }`}
-        >
-          <span className="font-medium">合計: {currentTotal}枚</span>
-          {isValid ? (
-            <span className="ml-2">✓</span>
-          ) : (
-            <span className="ml-2">
-              （{currentTotal > expectedTotal ? "+" : ""}
-              {currentTotal - expectedTotal}枚 / {expectedTotal}枚必要）
-            </span>
-          )}
-        </div>
-
-        </div>{/* /flex-1 scrollable */}
-
-        <div className="flex-shrink-0 px-6 pb-6 pt-3">
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg bg-gray-200 py-3 text-base text-gray-700 hover:bg-gray-300"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={() => onSave([...temp])}
-            disabled={!isValid}
-            className={`flex-1 rounded-lg py-3 text-base font-bold transition-all ${
-              isValid
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "cursor-not-allowed bg-gray-300 text-gray-500"
-            }`}
-          >
-            保存
-          </button>
-        </div>
-        </div>{/* /flex-shrink-0 footer */}
       </div>
-    </div>
+
+      <div
+        className={`mt-4 rounded-[var(--radius-md)] border px-3 py-2 text-center text-sm ${
+          isValid
+            ? "border-[var(--positive)] text-[var(--positive)]"
+            : "border-[var(--negative)] text-[var(--negative)]"
+        }`}
+      >
+        合計: <span className="num-mono tabular font-bold">{currentTotal}</span> 枚
+        {isValid ? " ✓" : ` (${currentTotal > expectedTotal ? "+" : ""}${currentTotal - expectedTotal} / ${expectedTotal}必要)`}
+      </div>
+    </Modal>
   );
 }

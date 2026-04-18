@@ -1,4 +1,5 @@
 import type { ChipConfig } from "@/app/session/new/page";
+import { Card } from "@/components/ui";
 
 type Props = {
   chipSettings: ChipConfig;
@@ -10,56 +11,56 @@ const CHIP_PRICES = [50, 100, 200, 500];
 
 export function ChipSettings({ chipSettings, onUpdate }: Props) {
   return (
-    <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
-      <h3 className="mb-3 text-base font-bold text-gray-700">
-        🎰 チップ設定
-      </h3>
+    <Card padding="md">
+      <h3 className="font-serif-jp text-base font-bold text-[var(--ink)]">チップ</h3>
+      <p className="mt-0.5 text-xs text-[var(--ink-subtle)]">
+        終了時に各自の枚数を入力して精算します
+      </p>
 
-      <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-600">
-          スタート枚数（1人あたり）
-        </label>
+      <div className="mt-4">
+        <div className="mb-2 text-[11px] tracking-widest text-[var(--ink-subtle)]">スタート枚数（1人あたり）</div>
         <div className="flex gap-2">
-          {CHIP_COUNTS.map((num) => (
-            <button
-              key={num}
-              onClick={() => onUpdate({ startChips: num })}
-              className={`flex-1 rounded-lg p-2 text-sm ${
-                chipSettings.startChips === num
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {num}枚
-            </button>
-          ))}
+          {CHIP_COUNTS.map((num) => {
+            const active = chipSettings.startChips === num;
+            return (
+              <button
+                key={num}
+                onClick={() => onUpdate({ startChips: num })}
+                className={`flex-1 rounded-[var(--radius-md)] border py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--surface)]"
+                    : "border-[var(--line)] text-[var(--ink-muted)] hover:border-[var(--ink-subtle)]"
+                }`}
+              >
+                {num}枚
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-600">
-          1枚あたり
-        </label>
+      <div className="mt-4">
+        <div className="mb-2 text-[11px] tracking-widest text-[var(--ink-subtle)]">1枚あたり</div>
         <div className="flex gap-2">
-          {CHIP_PRICES.map((price) => (
-            <button
-              key={price}
-              onClick={() => onUpdate({ pricePerChip: price })}
-              className={`flex-1 rounded-lg p-2 text-sm ${
-                chipSettings.pricePerChip === price
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {price}pt
-            </button>
-          ))}
+          {CHIP_PRICES.map((price) => {
+            const active = chipSettings.pricePerChip === price;
+            return (
+              <button
+                key={price}
+                onClick={() => onUpdate({ pricePerChip: price })}
+                className={`flex-1 rounded-[var(--radius-md)] border py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--surface)]"
+                    : "border-[var(--line)] text-[var(--ink-muted)] hover:border-[var(--ink-subtle)]"
+                }`}
+              >
+                <span className="num-mono">{price}</span>
+                <span className="text-[10px] text-[var(--ink-subtle)]"> pt</span>
+              </button>
+            );
+          })}
         </div>
       </div>
-
-      <div className="mt-3 rounded-lg bg-gray-50 p-2 text-center text-sm text-gray-600">
-        ※ 終了時に各自の最終枚数を入力して精算します
-      </div>
-    </div>
+    </Card>
   );
 }

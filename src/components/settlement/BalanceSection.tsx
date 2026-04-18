@@ -1,6 +1,7 @@
+import { Card } from "@/components/ui";
+
 type Props = {
   title: string;
-  icon: string;
   members: string[];
   balances: number[];
   subtitle?: string;
@@ -8,13 +9,12 @@ type Props = {
   action?: React.ReactNode;
 };
 
-function formatYen(value: number): string {
-  return `${value >= 0 ? "+" : ""}${value.toLocaleString()}pt`;
+function formatPt(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toLocaleString()}`;
 }
 
 export function BalanceSection({
   title,
-  icon,
   members,
   balances,
   subtitle,
@@ -22,36 +22,37 @@ export function BalanceSection({
   action,
 }: Props) {
   return (
-    <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-base font-bold text-gray-700">
-          {icon} {title}
+    <Card padding="md">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-serif-jp text-base font-bold text-[var(--ink)]">{title}</h3>
           {subtitle && (
-            <span className="text-xs font-normal text-gray-500">
-              {subtitle}
-            </span>
+            <p className="mt-0.5 text-xs text-[var(--ink-subtle)]">{subtitle}</p>
           )}
-        </h3>
+        </div>
         {action}
       </div>
-      <div className="space-y-2">
+      <div className="mt-3 divide-y divide-[var(--line)]">
         {members.map((name, i) => (
-          <div
-            key={name}
-            className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-gray-700">{name}</span>
-              {extra?.(i)}
+          <div key={name} className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2 text-sm text-[var(--ink)]">
+              <span>{name}</span>
+              <span className="text-xs text-[var(--ink-subtle)]">{extra?.(i)}</span>
             </div>
             <span
-              className={`font-bold ${balances[i] >= 0 ? "text-green-600" : "text-red-600"}`}
+              className={`num-mono tabular text-sm font-bold ${
+                balances[i] > 0
+                  ? "text-[var(--positive)]"
+                  : balances[i] < 0
+                    ? "text-[var(--negative)]"
+                    : "text-[var(--ink-muted)]"
+              }`}
             >
-              {formatYen(balances[i])}
+              {formatPt(balances[i])}<span className="ml-0.5 text-[10px] text-[var(--ink-subtle)]">pt</span>
             </span>
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

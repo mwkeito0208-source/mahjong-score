@@ -19,6 +19,7 @@ import { useAppStore } from "@/store";
 import { getSession, getGroup } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
 import { useSyncFromSupabase } from "@/store/useSyncFromSupabase";
+import { Button, Card } from "@/components/ui";
 
 export default function SettlementPage() {
   const router = useRouter();
@@ -42,34 +43,27 @@ export default function SettlementPage() {
 
   if (!hydrated || (!session && !synced)) {
     return (
-      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-orange-500 p-3 text-white">
-          <div className="text-lg font-bold">💰 精算</div>
-        </div>
-        <p className="text-center text-gray-500">読み込み中...</p>
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <p className="text-sm text-[var(--ink-muted)]">読み込み中…</p>
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-        <div className="rounded-xl bg-white p-8 text-center shadow-md">
-          <p className="text-gray-500">セッションが見つかりません</p>
-          <button
-            onClick={() => router.push("/")}
-            className="mt-4 rounded-lg bg-green-600 px-6 py-2 text-white"
-          >
-            ホームに戻る
-          </button>
-        </div>
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <Card padding="lg" className="text-center">
+          <p className="text-[var(--ink-muted)]">対局が見つかりません</p>
+          <Button variant="primary" size="md" className="mt-4" onClick={() => router.push("/")}>
+            席に戻る
+          </Button>
+        </Card>
       </div>
     );
   }
 
   const { settings, chipConfig, members } = session;
 
-  // Calculate mahjong balances
   const roundDataList: RoundData[] = session.rounds.map((r) => ({
     scores: r.scores,
     tobi: r.tobi,
@@ -81,17 +75,16 @@ export default function SettlementPage() {
           settings.returnPoints,
           settings.uma,
           settings.tobiPenalty,
-          settings.startPoints
+          settings.startPoints,
         )
       : members.map(() => 0);
   const mahjongBalances = calculateMoney(totals, settings.rate);
 
-  // Chip balances
   const chipBalances = chipConfig.enabled
     ? calculateChipBalances(
         session.chipCounts,
         chipConfig.startChips,
-        chipConfig.pricePerChip
+        chipConfig.pricePerChip,
       )
     : members.map(() => 0);
 
@@ -102,27 +95,22 @@ export default function SettlementPage() {
   const perPersonExpense = Math.floor(sharedExpenseTotal / members.length);
 
   const finalBalances = members.map(
-    (_, i) => mahjongBalances[i] + chipBalances[i] + expenseBalances[i]
+    (_, i) => mahjongBalances[i] + chipBalances[i] + expenseBalances[i],
   );
 
   const mahjongSettlements = calculateSettlements(members, mahjongBalances);
   const finalSettlements = calculateSettlements(members, finalBalances);
 
-  // Session name for share text
   const sessionDate = new Date(session.date);
   const dateStr = `${sessionDate.getMonth() + 1}/${sessionDate.getDate()}`;
-  const sessionName = group
-    ? `${dateStr} ${group.name}`
-    : `${dateStr} セッション`;
+  const sessionName = group ? `${dateStr} ${group.name}` : `${dateStr} 対局`;
 
   const handleAddExpense = (data: Omit<Expense, "id">) => {
     addExpense(session.id, data);
   };
-
   const handleUpdateExpense = (expenseId: string, patch: Partial<Omit<Expense, "id">>) => {
     updateExpense(session.id, expenseId, patch);
   };
-
   const handleRemoveExpense = (expenseId: string) => {
     removeExpense(session.id, expenseId);
   };
@@ -136,7 +124,7 @@ export default function SettlementPage() {
       expenseBalances,
       finalBalances,
       finalSettlements,
-      chipConfig.enabled
+      chipConfig.enabled,
     );
     try {
       await navigator.clipboard.writeText(text);
@@ -153,102 +141,90 @@ export default function SettlementPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
+    <div className="min-h-dvh pb-10">
       {/* ヘッダー */}
-      <div className="mb-4 flex items-center justify-between rounded-xl bg-orange-500 p-3 text-white">
-        <div className="text-lg font-bold">💰 精算</div>
-        <button
-          onClick={() => router.push(`/session/${sessionId}/score`)}
-          className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
-        >
-          ← 戻る
-        </button>
-      </div>
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
+          <button
+            onClick={() => router.push(`/session/${sessionId}/score`)}
+            className="inline-flex items-center gap-1 text-sm text-[var(--ink-muted)] hover:text-[var(--ink)]"
+          >
+            ← 対局へ
+          </button>
+          <div className="min-w-0 text-center">
+            <div className="font-serif-jp text-sm font-bold tracking-widest text-[var(--ink)] truncate">
+              精算
+            </div>
+            <div className="mt-0.5 text-[10px] text-[var(--ink-subtle)] truncate">{sessionName}</div>
+          </div>
+          <div className="w-16" />
+        </div>
+      </header>
 
-      {/* 麻雀収支 */}
-      <BalanceSection
-        title="麻雀収支"
-        icon="🀄"
-        members={members}
-        balances={mahjongBalances}
-      />
-
-      {/* チップ収支 */}
-      {chipConfig.enabled && (
+      <main className="mx-auto max-w-2xl space-y-4 px-4 py-5">
+        {/* 麻雀収支 */}
         <BalanceSection
-          title="チップ収支"
-          icon="🎰"
+          title="麻雀収支"
           members={members}
-          balances={chipBalances}
-          subtitle={`(${chipConfig.startChips}枚スタート / ${chipConfig.pricePerChip}pt)`}
-          extra={(i) => (
-            <span className="text-xs text-gray-400">
-              ({session.chipCounts[i]}枚 /{" "}
-              {session.chipCounts[i] - chipConfig.startChips >= 0 ? "+" : ""}
-              {session.chipCounts[i] - chipConfig.startChips})
-            </span>
-          )}
-          action={
-            <button
-              onClick={() => setShowChipInput(true)}
-              className="text-sm font-medium text-green-600 hover:text-green-700"
-            >
-              編集
-            </button>
-          }
+          balances={mahjongBalances}
         />
-      )}
 
-      {/* 麻雀のみの精算 */}
-      <SettlementList
-        title="麻雀精算（PayPay等）"
-        icon="📱"
-        settlements={mahjongSettlements}
-      />
+        {/* チップ収支 */}
+        {chipConfig.enabled && (
+          <BalanceSection
+            title="チップ収支"
+            subtitle={`${chipConfig.startChips}枚 × ${chipConfig.pricePerChip}pt/枚`}
+            members={members}
+            balances={chipBalances}
+            extra={(i) => {
+              const diff = session.chipCounts[i] - chipConfig.startChips;
+              return `${session.chipCounts[i]}枚 (${diff >= 0 ? "+" : ""}${diff})`;
+            }}
+            action={
+              <Button variant="ghost" size="sm" onClick={() => setShowChipInput(true)}>
+                編集
+              </Button>
+            }
+          />
+        )}
 
-      {/* その他費用 */}
-      <ExpenseSection
-        members={members}
-        expenses={session.expenses}
-        perPersonExpense={perPersonExpense}
-        onAddExpense={handleAddExpense}
-        onUpdateExpense={handleUpdateExpense}
-        onRemoveExpense={handleRemoveExpense}
-      />
+        {/* 麻雀のみの精算 */}
+        <SettlementList title="麻雀精算（PayPay等）" settlements={mahjongSettlements} />
 
-      {/* 最終精算 */}
-      <SettlementList
-        title="最終精算（全部込み）"
-        icon="💳"
-        settlements={finalSettlements}
-        variant="highlight"
-      />
+        {/* その他費用 */}
+        <ExpenseSection
+          members={members}
+          expenses={session.expenses}
+          perPersonExpense={perPersonExpense}
+          onAddExpense={handleAddExpense}
+          onUpdateExpense={handleUpdateExpense}
+          onRemoveExpense={handleRemoveExpense}
+        />
 
-      {/* LINEコピー */}
-      <button
-        onClick={handleCopy}
-        className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-base font-bold transition-all ${
-          copied
-            ? "bg-green-500 text-white"
-            : "bg-green-500 text-white hover:bg-green-600"
-        }`}
-      >
-        {copied
-          ? "✓ コピーしました！LINEに貼り付けてね"
-          : "📋 LINEに送る（コピー）"}
-      </button>
+        {/* 最終精算 */}
+        <SettlementList title="最終精算（全部込み）" settlements={finalSettlements} variant="highlight" />
 
-      {/* 内訳 */}
-      <BreakdownDetails
-        members={members}
-        mahjongBalances={mahjongBalances}
-        chipBalances={chipBalances}
-        expenseBalances={expenseBalances}
-        finalBalances={finalBalances}
-        chipEnabled={chipConfig.enabled}
-      />
+        {/* LINEへコピー */}
+        <Button
+          variant={copied ? "secondary" : "primary"}
+          size="lg"
+          fullWidth
+          onClick={handleCopy}
+        >
+          {copied ? "✓ コピーしました" : "LINEに送る（コピー）"}
+        </Button>
 
-      {/* チップ入力モーダル */}
+        {/* 内訳 */}
+        <BreakdownDetails
+          members={members}
+          mahjongBalances={mahjongBalances}
+          chipBalances={chipBalances}
+          expenseBalances={expenseBalances}
+          finalBalances={finalBalances}
+          chipEnabled={chipConfig.enabled}
+        />
+      </main>
+
       {showChipInput && (
         <ChipInputModal
           members={members}

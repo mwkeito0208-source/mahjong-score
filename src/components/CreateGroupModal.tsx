@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal, Input, Textarea, Button, Badge } from "@/components/ui";
 
 type Props = {
   onClose: () => void;
@@ -18,84 +19,66 @@ export function CreateGroupModal({ onClose, onCreate }: Props) {
   const uniqueMembers = [...new Set(parsedMembers)];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6">
-        <h3 className="mb-5 text-center text-lg font-bold text-gray-800">
-          🀄 新しいグループ
-        </h3>
-
-        <div className="mb-4">
-          <label className="mb-1 block font-bold text-gray-700">
-            グループ名
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="例: いつメン麻雀"
-            className="w-full rounded-lg border-2 border-gray-300 p-3 text-base focus:border-green-500 focus:outline-none"
-            autoFocus
-          />
+    <Modal
+      open
+      onClose={onClose}
+      title="新しい組"
+      size="sm"
+      footer={
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" fullWidth onClick={onClose}>
+            キャンセル
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            disabled={!name.trim()}
+            onClick={() =>
+              name.trim() &&
+              onCreate(
+                name.trim(),
+                uniqueMembers.length > 0 ? uniqueMembers : undefined,
+              )
+            }
+          >
+            作成する
+          </Button>
         </div>
+      }
+    >
+      <div className="space-y-4">
+        <Input
+          label="組の名前"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="例: いつメン麻雀"
+          autoFocus
+        />
 
-        <div className="mb-4">
-          <label className="mb-1 block font-bold text-gray-700">
-            メンバー
-            <span className="ml-1 text-xs font-normal text-gray-400">
-              任意・カンマ区切り
-            </span>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--ink-muted)]">
+            メンバー <span className="text-xs font-normal text-[var(--ink-subtle)]">任意・カンマ区切り</span>
           </label>
-          <textarea
+          <Textarea
             value={memberInput}
             onChange={(e) => setMemberInput(e.target.value)}
             placeholder={"例: 田中、佐藤、鈴木、山田"}
             rows={2}
-            className="w-full rounded-lg border-2 border-gray-300 p-3 text-base focus:border-green-500 focus:outline-none"
           />
           {uniqueMembers.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
+            <div className="mt-2 flex flex-wrap gap-1">
               {uniqueMembers.map((m) => (
-                <span
-                  key={m}
-                  className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700"
-                >
-                  {m}
-                </span>
+                <Badge key={m} tone="neutral" size="sm">{m}</Badge>
               ))}
             </div>
           )}
         </div>
 
-        <p className="mb-4 text-sm text-gray-500">
-          グループを作成したら、招待リンクを友達に共有しましょう。
+        <p className="text-xs text-[var(--ink-subtle)]">
+          作成したら、招待リンクを友達に共有できます。
         </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg bg-gray-200 py-3 text-base text-gray-700 hover:bg-gray-300"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={() =>
-              name.trim() &&
-              onCreate(
-                name.trim(),
-                uniqueMembers.length > 0 ? uniqueMembers : undefined
-              )
-            }
-            disabled={!name.trim()}
-            className={`flex-1 rounded-lg py-3 text-base font-bold ${
-              name.trim()
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "cursor-not-allowed bg-gray-300 text-gray-500"
-            }`}
-          >
-            作成
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

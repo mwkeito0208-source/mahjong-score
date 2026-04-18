@@ -10,6 +10,7 @@ import { AddMemberModal } from "@/components/session/AddMemberModal";
 import { useAppStore } from "@/store";
 import { getGroup, getMemberHistory } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
+import { Button } from "@/components/ui";
 
 export type SessionSettings = {
   rate: string;
@@ -53,11 +54,8 @@ export default function NewSessionPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-          <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-            <div className="text-lg font-bold">🀄 新しいセッション</div>
-          </div>
-          <p className="text-center text-gray-500">読み込み中...</p>
+        <div className="mx-auto max-w-2xl px-4 py-6">
+          <p className="text-sm text-[var(--ink-muted)]">読み込み中…</p>
         </div>
       }
     >
@@ -80,7 +78,7 @@ function NewSessionContent() {
   const memberHistory = getMemberHistory(groups);
 
   const [selectedMembers, setSelectedMembers] = useState<string[]>(
-    (group?.members ?? []).length <= 5 ? (group?.members ?? []) : []
+    (group?.members ?? []).length <= 5 ? (group?.members ?? []) : [],
   );
   const [showAddMember, setShowAddMember] = useState(false);
 
@@ -113,29 +111,18 @@ function NewSessionContent() {
     setShowAddMember(false);
   };
 
-  const updateSettings = (patch: Partial<SessionSettings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
-  };
-
-  const updateChipSettings = (patch: Partial<ChipConfig>) => {
-    setChipSettings((prev) => ({ ...prev, ...patch }));
-  };
-
   const canStart = selectedMembers.length >= 3 && selectedMembers.length <= 5;
   const isThreePlayer = selectedMembers.length === 3;
   const umaMap = isThreePlayer ? UMA_MAP_3 : UMA_MAP_4;
 
   const handleStart = () => {
     if (!canStart) return;
-
-    // Update group members if new members were added
     if (group) {
       const allMembers = new Set([...group.members, ...selectedMembers]);
       if (allMembers.size > group.members.length) {
         updateGroup(group.id, { members: Array.from(allMembers) });
       }
     }
-
     const session = createSession({
       groupId,
       members: selectedMembers,
@@ -156,73 +143,90 @@ function NewSessionContent() {
     router.push(`/session/${session.id}/score`);
   };
 
-  // Combine member history with group members for the selector
   const allKnownMembers = Array.from(
-    new Set([...memberHistory, ...(group?.members ?? [])])
+    new Set([...memberHistory, ...(group?.members ?? [])]),
   );
 
   if (!hydrated) {
     return (
-      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-          <div className="text-lg font-bold">🀄 新しいセッション</div>
-        </div>
-        <p className="text-center text-gray-500">読み込み中...</p>
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <p className="text-sm text-[var(--ink-muted)]">読み込み中…</p>
       </div>
     );
   }
 
+  const needMore = Math.max(0, 3 - selectedMembers.length);
+
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-      {/* ヘッダー */}
-      <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-        <div className="text-lg font-bold">🀄 新しいセッション</div>
-        <button
-          onClick={() => router.push(groupId ? `/group/${groupId}` : "/")}
-          className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
-        >
-          ← 戻る
-        </button>
+    <div className="min-h-dvh pb-32">
+      {/* 集中モード用の簡潔ヘッダー（AppShellは非表示） */}
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <button
+            onClick={() => router.push(groupId ? `/group/${groupId}` : "/")}
+            className="inline-flex items-center gap-1 text-sm text-[var(--ink-muted)] hover:text-[var(--ink)]"
+          >
+            ← 戻る
+          </button>
+          <div className="font-serif-jp text-sm font-bold tracking-widest text-[var(--ink)]">
+            卓を設える
+          </div>
+          <div className="w-16" />
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+        {group && (
+          <div>
+            <p className="text-[11px] tracking-[0.3em] text-[var(--ink-subtle)]">GROUP</p>
+            <h1 className="mt-0.5 font-serif-jp text-2xl font-bold tracking-wider text-[var(--ink)]">
+              {group.name}
+            </h1>
+          </div>
+        )}
+
+        <MemberSelector
+          memberHistory={allKnownMembers}
+          selectedMembers={selectedMembers}
+          onToggle={toggleMember}
+          onShowAdd={() => setShowAddMember(true)}
+        />
+
+        <RuleSettings
+          settings={settings}
+          onUpdate={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
+          playerCount={selectedMembers.length}
+        />
+
+        {settings.chip && (
+          <ChipSettings
+            chipSettings={chipSettings}
+            onUpdate={(patch) => setChipSettings((prev) => ({ ...prev, ...patch }))}
+          />
+        )}
+
+        <SettingsSummary settings={settings} chipSettings={chipSettings} />
       </div>
 
-      {/* メンバー選択 */}
-      <MemberSelector
-        memberHistory={allKnownMembers}
-        selectedMembers={selectedMembers}
-        onToggle={toggleMember}
-        onShowAdd={() => setShowAddMember(true)}
-      />
+      {/* 固定フッター：開始CTA */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_95%,transparent)] backdrop-blur pb-safe">
+        <div className="mx-auto max-w-2xl px-4 py-3">
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={!canStart}
+            onClick={handleStart}
+          >
+            {canStart
+              ? `${selectedMembers.length}人で始める →`
+              : needMore > 0
+                ? `あと${needMore}人 選んでください`
+                : "人数は3〜5人で"}
+          </Button>
+        </div>
+      </div>
 
-      {/* ルール設定 */}
-      <RuleSettings settings={settings} onUpdate={updateSettings} playerCount={selectedMembers.length} />
-
-      {/* チップ詳細設定 */}
-      {settings.chip && (
-        <ChipSettings
-          chipSettings={chipSettings}
-          onUpdate={updateChipSettings}
-        />
-      )}
-
-      {/* 設定サマリー */}
-      <SettingsSummary settings={settings} chipSettings={chipSettings} />
-
-      {/* 開始ボタン */}
-      <button
-        disabled={!canStart}
-        onClick={handleStart}
-        className={`w-full rounded-xl py-4 text-lg font-bold transition-all ${
-          canStart
-            ? "bg-green-600 text-white hover:bg-green-700"
-            : "cursor-not-allowed bg-gray-300 text-gray-500"
-        }`}
-      >
-        {canStart
-          ? `🀄 ${selectedMembers.length}人で開始！`
-          : `メンバーを${3 - selectedMembers.length > 0 ? `あと${3 - selectedMembers.length}人` : "3〜5人"}選択してください`}
-      </button>
-
-      {/* 新規メンバー追加モーダル */}
       {showAddMember && (
         <AddMemberModal
           existingMembers={[...allKnownMembers, ...selectedMembers]}

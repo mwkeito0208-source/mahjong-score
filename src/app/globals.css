@@ -1,6 +1,208 @@
 @import "tailwindcss";
 
+/* =========================================================
+ * 麻雀番付 — 和モダンデザインシステム
+ *   墨(sumi) / 生成り(kinari) / 朱(shu) / 金(kin) / 藍(ai) / 緑青(ryokusho)
+ *   light(既定) / dark 両対応。data-theme で切替。
+ * ========================================================= */
+
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Font stacks */
+  --font-sans: var(--font-noto-sans-jp), var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-jp), "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Palette — 固定カラー（トーク色名） */
+  --color-sumi-900: #0f0f10;
+  --color-sumi-800: #1a1a1c;
+  --color-sumi-700: #2b2b2e;
+  --color-sumi-600: #404045;
+  --color-sumi-500: #5a5a60;
+  --color-sumi-400: #8a8a90;
+  --color-sumi-300: #b5b5bb;
+  --color-sumi-200: #d8d8dc;
+  --color-sumi-100: #ebebee;
+
+  --color-kinari-50:  #fcf9f2;
+  --color-kinari-100: #f7f1e4;
+  --color-kinari-200: #efe6d1;
+  --color-kinari-300: #e4d6b6;
+
+  --color-shu-500:  #c1272d;
+  --color-shu-600:  #a41f25;
+  --color-shu-400:  #d84a50;
+  --color-shu-100:  #fbe6e7;
+
+  --color-kin-500:  #c9a86a;
+  --color-kin-600:  #a8874a;
+  --color-kin-400:  #dcc38e;
+  --color-kin-100:  #f4ead3;
+
+  --color-ai-600:   #22384f;
+  --color-ai-500:   #395169;
+  --color-ai-400:   #5a7592;
+
+  --color-ryokusho-600: #2f5a4b;
+  --color-ryokusho-500: #3a6b5a;
+  --color-ryokusho-400: #5a8a79;
+
+  /* Semantic tokens — 役割名。テーマで中身が変わる */
+  --color-bg:          var(--bg);
+  --color-bg-subtle:   var(--bg-subtle);
+  --color-surface:     var(--surface);
+  --color-surface-2:   var(--surface-2);
+  --color-line:        var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink:         var(--ink);
+  --color-ink-muted:   var(--ink-muted);
+  --color-ink-subtle:  var(--ink-subtle);
+  --color-accent:      var(--accent);
+  --color-accent-ink:  var(--accent-ink);
+  --color-gold:        var(--gold);
+  --color-positive:    var(--positive);
+  --color-negative:    var(--negative);
+
+  /* Radii — 角丸控えめ（和の直線性） */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows — 墨の滲み的、拡散弱め */
+  --shadow-sm: 0 1px 2px rgba(26, 26, 28, 0.06), 0 0 0 1px var(--line);
+  --shadow-md: 0 2px 6px rgba(26, 26, 28, 0.08), 0 0 0 1px var(--line);
+  --shadow-lg: 0 8px 24px rgba(26, 26, 28, 0.10), 0 0 0 1px var(--line);
+}
+
+/* ---------- Light（既定）---------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:          #faf6ee;         /* 生成り */
+  --bg-subtle:   #f4ecdc;
+  --surface:     #ffffff;
+  --surface-2:   #fcf9f2;
+  --line:        rgba(26, 26, 28, 0.08);
+  --line-strong: rgba(26, 26, 28, 0.16);
+  --ink:         #1a1a1c;
+  --ink-muted:   #5a5a60;
+  --ink-subtle:  #8a8a90;
+  --accent:      #c1272d;          /* 朱 */
+  --accent-ink:  #ffffff;
+  --gold:        #a8874a;
+  --positive:    #2f5a4b;          /* 緑青 */
+  --negative:    #a41f25;
+}
+
+/* ---------- Dark ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          #121213;
+  --bg-subtle:   #18181a;
+  --surface:     #1e1e20;
+  --surface-2:   #26262a;
+  --line:        rgba(245, 239, 228, 0.08);
+  --line-strong: rgba(245, 239, 228, 0.16);
+  --ink:         #f1ece0;
+  --ink-muted:   #b0aea6;
+  --ink-subtle:  #7c7a74;
+  --accent:      #d84a50;          /* 朱 明るめ */
+  --accent-ink:  #ffffff;
+  --gold:        #dcc38e;
+  --positive:    #5a8a79;
+  --negative:    #e77177;
+}
+
+/* システム追従（data-theme未設定時のみ） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg:          #121213;
+    --bg-subtle:   #18181a;
+    --surface:     #1e1e20;
+    --surface-2:   #26262a;
+    --line:        rgba(245, 239, 228, 0.08);
+    --line-strong: rgba(245, 239, 228, 0.16);
+    --ink:         #f1ece0;
+    --ink-muted:   #b0aea6;
+    --ink-subtle:  #7c7a74;
+    --accent:      #d84a50;
+    --accent-ink:  #ffffff;
+    --gold:        #dcc38e;
+    --positive:    #5a8a79;
+    --negative:    #e77177;
+  }
+}
+
+/* ---------- Global base ---------- */
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  /* 畳目風の極薄パターン（SVGデータURI） */
+  background-image:
+    linear-gradient(var(--bg), var(--bg)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M0 12h24M12 0v24' stroke='%23000' stroke-opacity='0.025' stroke-width='0.5'/></svg>");
+  background-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] body {
+  background-image:
+    linear-gradient(var(--bg), var(--bg)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M0 12h24M12 0v24' stroke='%23fff' stroke-opacity='0.03' stroke-width='0.5'/></svg>");
+}
+
+/* ---------- タイポグラフィ補助 ---------- */
+.font-serif-jp { font-family: var(--font-serif); }
+.num-mono      { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+
+/* 数値タブラー表示（スコアの桁揃え） */
+.tabular       { font-variant-numeric: tabular-nums; }
+
+/* ---------- 和モダン共通パーツ ---------- */
+
+/* 細い金線ボーダー（カード強調用）。ユーティリティで付与 */
+.border-gold {
+  border: 1px solid var(--gold);
+}
+
+/* 和紙質感の上紙感（カード背面に軽いノイズ） */
+.washi {
+  background-color: var(--surface);
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.03 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+:root[data-theme="dark"] .washi {
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* 朱の印影（ブランドマーク用） */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  color: #fff;
+  background: var(--accent);
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.08em;
+}
+
+/* スクロール時の安全域（iOS底タブ対策） */
+.pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
+.pt-safe { padding-top:  calc(env(safe-area-inset-top, 0px) + 0.5rem); }
+
+/* フォーカスリング統一 */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }

@@ -1,3 +1,5 @@
+import { Card, Badge } from "@/components/ui";
+
 type OpponentStat = {
   name: string;
   sessions: number;
@@ -9,54 +11,64 @@ type Props = {
   data: OpponentStat[];
 };
 
-function getRankColor(rank: number): string {
-  if (rank <= 2.0) return "text-green-600";
-  if (rank <= 2.5) return "text-yellow-600";
-  return "text-red-600";
+function rankTone(rank: number): "positive" | "neutral" | "negative" {
+  if (rank <= 2.0) return "positive";
+  if (rank <= 2.5) return "neutral";
+  return "negative";
 }
 
 export function OpponentsTab({ data }: Props) {
   const sorted = [...data].sort((a, b) => b.balance - a.balance);
 
+  if (sorted.length === 0) {
+    return (
+      <Card padding="lg" className="text-center">
+        <p className="text-sm text-[var(--ink-muted)]">対戦相手のデータがありません</p>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-3">
-      {sorted.map((opponent) => (
-        <div
-          key={opponent.name}
-          className="rounded-xl bg-white p-4 shadow-md"
-        >
-          <div className="mb-2 flex items-start justify-between">
-            <div>
-              <div className="font-bold text-gray-800">{opponent.name}</div>
-              <div className="text-sm text-gray-500">
-                {opponent.sessions}回対戦
+    <div className="space-y-2">
+      {sorted.map((opponent) => {
+        const tone = rankTone(opponent.avgRank);
+        const toneClass =
+          tone === "positive"
+            ? "text-[var(--positive)]"
+            : tone === "negative"
+              ? "text-[var(--negative)]"
+              : "text-[var(--ink-muted)]";
+        return (
+          <Card key={opponent.name} padding="md">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-serif-jp text-base font-bold text-[var(--ink)]">
+                  {opponent.name}
+                </div>
+                <div className="mt-0.5 text-xs text-[var(--ink-muted)]">
+                  {opponent.sessions}回対戦
+                </div>
+              </div>
+              <div className={`num-mono tabular text-base font-bold ${
+                opponent.balance >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+              }`}>
+                {opponent.balance >= 0 ? "+" : ""}
+                {opponent.balance.toLocaleString()}
+                <span className="ml-0.5 text-[10px] text-[var(--ink-subtle)]">pt</span>
               </div>
             </div>
-            <div
-              className={`text-lg font-bold ${opponent.balance >= 0 ? "text-green-600" : "text-red-600"}`}
-            >
-              {opponent.balance >= 0 ? "+" : ""}
-              {opponent.balance.toLocaleString()}pt
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span className="text-[var(--ink-subtle)]">平均順位</span>
+              <span className={`num-mono tabular font-medium ${toneClass}`}>
+                {opponent.avgRank.toFixed(2)}位
+              </span>
+              <Badge tone={opponent.balance >= 0 ? "positive" : "negative"} size="sm">
+                {opponent.balance >= 0 ? "相性◎" : "相性△"}
+              </Badge>
             </div>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">平均順位:</span>
-            <span
-              className={`font-medium ${getRankColor(opponent.avgRank)}`}
-            >
-              {opponent.avgRank.toFixed(1)}位
-            </span>
-            <span className="text-gray-300">|</span>
-            <span
-              className={
-                opponent.balance >= 0 ? "text-green-600" : "text-red-600"
-              }
-            >
-              {opponent.balance >= 0 ? "相性◎" : "相性△"}
-            </span>
-          </div>
-        </div>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { OverviewTab } from "@/components/stats/OverviewTab";
 import { MonthlyTab } from "@/components/stats/MonthlyTab";
 import { OpponentsTab } from "@/components/stats/OpponentsTab";
@@ -19,12 +18,13 @@ import {
   type OpponentStat,
 } from "@/lib/stats-calc";
 import type { Session, Group } from "@/lib/types";
+import { Card } from "@/components/ui";
 
 const TABS = [
   { id: "overview", label: "概要" },
   { id: "monthly", label: "月別" },
   { id: "opponents", label: "対戦相手" },
-  { id: "groups", label: "グループ" },
+  { id: "groups", label: "組別" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -32,7 +32,6 @@ type TabId = (typeof TABS)[number]["id"];
 const SELECTED_MEMBER_KEY = "mahjong-stats-selected-member";
 
 export default function StatsPage() {
-  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
@@ -44,16 +43,13 @@ export default function StatsPage() {
   const [memberNames, setMemberNames] = useState<string[]>([]);
   const [selectedMember, setSelectedMember] = useState<string>("");
 
-  // 計算結果
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [monthly, setMonthly] = useState<MonthlyStat[]>([]);
   const [opponents, setOpponents] = useState<OpponentStat[]>([]);
   const [groupStats, setGroupStats] = useState<GroupStat[]>([]);
 
-  // データ取得
   useEffect(() => {
     if (!user) return;
-
     (async () => {
       try {
         const groupIds = await fetchMyGroupIds(user.id);
@@ -67,7 +63,6 @@ export default function StatsPage() {
         const names = getAllMemberNames(s);
         setMemberNames(names);
 
-        // 前回選択したメンバーを復元
         const saved = localStorage.getItem(SELECTED_MEMBER_KEY);
         if (saved && names.includes(saved)) {
           setSelectedMember(saved);
@@ -83,7 +78,6 @@ export default function StatsPage() {
     })();
   }, [user]);
 
-  // 統計計算
   const recalc = useCallback(
     (member: string, sess: Session[], grps: Group[]) => {
       if (!member || sess.length === 0) {
@@ -98,7 +92,7 @@ export default function StatsPage() {
       setOpponents(calcOpponents(sess, member));
       setGroupStats(calcGroups(sess, grps, member));
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -110,106 +104,76 @@ export default function StatsPage() {
     localStorage.setItem(SELECTED_MEMBER_KEY, name);
   };
 
-  if (loading) {
-    return (
-      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-          <div className="text-lg font-bold">📊 統計</div>
-        </div>
-        <div className="flex items-center justify-center py-20 text-gray-500">
-          読み込み中...
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-          <div className="text-lg font-bold">📊 統計</div>
-          <button
-            onClick={() => router.push("/")}
-            className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
-          >
-            ← 戻る
-          </button>
-        </div>
-        <div className="rounded-xl bg-red-50 p-6 text-center text-red-600">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-gray-100 p-4 font-sans">
-      {/* ヘッダー */}
-      <div className="mb-4 flex items-center justify-between rounded-xl bg-green-900 p-3 text-white">
-        <div className="text-lg font-bold">📊 統計</div>
-        <button
-          onClick={() => router.push("/")}
-          className="rounded-lg bg-white/20 px-4 py-2 text-sm hover:bg-white/30"
-        >
-          ← 戻る
-        </button>
+    <div className="mx-auto max-w-2xl px-4 py-6 lg:py-10">
+      <div>
+        <p className="text-xs tracking-[0.3em] text-[var(--ink-subtle)]">STATS</p>
+        <h1 className="mt-1 font-serif-jp text-3xl font-bold tracking-wider text-[var(--ink)]">
+          戦績
+        </h1>
+        <p className="mt-1 text-sm text-[var(--ink-muted)]">
+          通算収支、順位分布、対戦相手・組別の成績。
+        </p>
       </div>
 
-      {/* メンバー選択 */}
-      {memberNames.length > 0 && (
-        <div className="mb-4 rounded-xl bg-white p-3 shadow-md">
-          <label className="mb-1 block text-xs text-gray-500">
-            表示するプレイヤー
-          </label>
-          <select
-            value={selectedMember}
-            onChange={(e) => handleMemberChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800"
-          >
-            {memberNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* データなし */}
-      {sessions.length === 0 && (
-        <div className="rounded-xl bg-white p-8 text-center shadow-md">
-          <div className="mb-3 text-4xl">📊</div>
-          <p className="text-gray-500">データがありません</p>
-          <p className="mt-1 text-sm text-gray-400">
-            セッションを作成して対局を記録しましょう
+      {loading ? (
+        <p className="mt-8 text-sm text-[var(--ink-muted)]">読み込み中…</p>
+      ) : error ? (
+        <Card padding="lg" className="mt-6 text-center">
+          <p className="text-[var(--negative)]">{error}</p>
+        </Card>
+      ) : sessions.length === 0 ? (
+        <Card padding="lg" accent="gold" className="mt-6 text-center">
+          <p className="text-sm font-medium text-[var(--ink)]">記録がありません</p>
+          <p className="mt-1 text-xs text-[var(--ink-muted)]">
+            組を作って対局を記録すると、ここに戦績が残ります。
           </p>
-        </div>
-      )}
-
-      {sessions.length > 0 && overview && (
+        </Card>
+      ) : (
         <>
-          {/* タブ */}
-          <div className="mb-4 flex gap-2">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                  activeTab === tab.id
-                    ? "bg-green-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
+          {memberNames.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-1.5 text-[11px] tracking-widest text-[var(--ink-subtle)]">
+                表示するプレイヤー
+              </div>
+              <select
+                value={selectedMember}
+                onChange={(e) => handleMemberChange(e.target.value)}
+                className="w-full rounded-[var(--radius-md)] border border-[var(--line-strong)] bg-[var(--surface)] px-3 py-2.5 text-base font-medium text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
               >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                {memberNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* タブコンテンツ */}
-          {activeTab === "overview" && <OverviewTab stats={overview} />}
-          {activeTab === "monthly" && <MonthlyTab data={monthly} />}
-          {activeTab === "opponents" && <OpponentsTab data={opponents} />}
-          {activeTab === "groups" && <GroupsTab data={groupStats} />}
+          {overview && (
+            <>
+              <div className="mt-5 flex overflow-x-auto border-b border-[var(--line)]">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`whitespace-nowrap px-4 py-2.5 font-serif-jp text-sm font-medium tracking-wider transition-colors ${
+                      activeTab === tab.id
+                        ? "border-b-2 border-[var(--accent)] text-[var(--ink)]"
+                        : "border-b-2 border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-5">
+                {activeTab === "overview" && <OverviewTab stats={overview} />}
+                {activeTab === "monthly" && <MonthlyTab data={monthly} />}
+                {activeTab === "opponents" && <OpponentsTab data={opponents} />}
+                {activeTab === "groups" && <GroupsTab data={groupStats} />}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RankDistribution } from "./RankDistribution";
 import { BalanceTrend } from "./BalanceTrend";
+import { Card, RankBadge } from "@/components/ui";
 
 export type MemberStat = {
   name: string;
@@ -18,7 +19,6 @@ export type GroupStat = {
   avgRank: number;
   rankCounts: number[];
   memberRanking: MemberStat[];
-  /** メンバー別のセッション収支履歴 */
   sessionHistory: {
     date: string;
     members: { name: string; balance: number }[];
@@ -29,119 +29,134 @@ type Props = {
   data: GroupStat[];
 };
 
-function getRankColor(rank: number): string {
-  if (rank <= 2.0) return "text-green-600";
-  if (rank <= 2.5) return "text-yellow-600";
-  return "text-red-600";
+function rankTone(rank: number): "positive" | "neutral" | "negative" {
+  if (rank <= 2.0) return "positive";
+  if (rank <= 2.5) return "neutral";
+  return "negative";
 }
-
-const MEDAL = ["🥇", "🥈", "🥉"];
 
 export function GroupsTab({ data }: Props) {
   const sorted = [...data].sort((a, b) => b.balance - a.balance);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
+  if (sorted.length === 0) {
+    return (
+      <Card padding="lg" className="text-center">
+        <p className="text-sm text-[var(--ink-muted)]">組のデータがありません</p>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {sorted.map((group) => {
         const isOpen = expandedGroup === group.name;
+        const tone = rankTone(group.avgRank);
+        const toneClass =
+          tone === "positive"
+            ? "text-[var(--positive)]"
+            : tone === "negative"
+              ? "text-[var(--negative)]"
+              : "text-[var(--ink-muted)]";
         return (
-          <div key={group.name} className="rounded-xl bg-white shadow-md">
-            {/* サマリー（タップで開閉） */}
-            <div
-              onClick={() =>
-                setExpandedGroup(isOpen ? null : group.name)
-              }
-              className="cursor-pointer p-4"
+          <Card key={group.name} padding="none">
+            <button
+              onClick={() => setExpandedGroup(isOpen ? null : group.name)}
+              className="w-full p-4 text-left"
             >
-              <div className="mb-2 flex items-start justify-between">
-                <div>
-                  <div className="font-bold text-gray-800">{group.name}</div>
-                  <div className="text-sm text-gray-500">
-                    {group.sessions}セッション
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-serif-jp text-base font-bold text-[var(--ink)]">
+                    {group.name}
+                  </div>
+                  <div className="mt-0.5 text-xs text-[var(--ink-muted)]">
+                    {group.sessions}対局
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
-                    className={`text-lg font-bold ${group.balance >= 0 ? "text-green-600" : "text-red-600"}`}
+                    className={`num-mono tabular text-base font-bold ${
+                      group.balance >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+                    }`}
                   >
                     {group.balance >= 0 ? "+" : ""}
-                    {group.balance.toLocaleString()}pt
+                    {group.balance.toLocaleString()}
+                    <span className="ml-0.5 text-[10px] text-[var(--ink-subtle)]">pt</span>
                   </div>
-                  <span className="text-gray-400">{isOpen ? "▲" : "▼"}</span>
+                  <span className="text-[var(--ink-subtle)]">{isOpen ? "▲" : "▼"}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">平均順位:</span>
-                <span
-                  className={`font-medium ${getRankColor(group.avgRank)}`}
-                >
+              <div className="mt-2 text-xs">
+                <span className="text-[var(--ink-subtle)]">平均順位 </span>
+                <span className={`num-mono tabular font-medium ${toneClass}`}>
                   {group.avgRank.toFixed(2)}位
                 </span>
               </div>
-            </div>
+            </button>
 
-            {/* 詳細（展開時） */}
             {isOpen && (
-              <div className="border-t border-gray-100 px-4 pb-4 pt-3 space-y-4">
-                {/* 順位分布 */}
+              <div className="space-y-4 border-t border-[var(--line)] px-4 pb-4 pt-3">
                 <RankDistribution counts={group.rankCounts} />
-
-                {/* 収支推移 */}
                 <BalanceTrend history={group.sessionHistory} />
 
-                {/* メンバー別成績 */}
                 <div>
-                  <h4 className="mb-2 text-sm font-bold text-gray-500">
+                  <h4 className="font-serif-jp text-sm font-bold text-[var(--ink)]">
                     メンバー別成績
                   </h4>
-                  <div className="space-y-2">
-                    {group.memberRanking.map((member, i) => (
-                      <div
-                        key={member.name}
-                        className="rounded-lg bg-gray-50 p-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 text-center text-sm">
-                              {i < 3 ? MEDAL[i] : `${i + 1}.`}
-                            </span>
-                            <span className="font-medium text-gray-800">
-                              {member.name}
-                            </span>
-                          </div>
-                          <div className="text-right">
+                  <div className="mt-2 space-y-2">
+                    {group.memberRanking.map((member, i) => {
+                      const mt = rankTone(member.avgRank);
+                      const mtClass =
+                        mt === "positive"
+                          ? "text-[var(--positive)]"
+                          : mt === "negative"
+                            ? "text-[var(--negative)]"
+                            : "text-[var(--ink-muted)]";
+                      return (
+                        <div
+                          key={member.name}
+                          className="rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)] p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {i < 4 ? (
+                                <RankBadge rank={(i + 1) as 1 | 2 | 3 | 4} />
+                              ) : (
+                                <span className="inline-flex h-6 w-6 items-center justify-center text-[11px] text-[var(--ink-subtle)]">
+                                  {i + 1}
+                                </span>
+                              )}
+                              <span className="font-medium text-[var(--ink)]">{member.name}</span>
+                            </div>
                             <span
-                              className={`font-bold ${member.balance >= 0 ? "text-green-600" : "text-red-600"}`}
+                              className={`num-mono tabular text-sm font-bold ${
+                                member.balance >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+                              }`}
                             >
                               {member.balance >= 0 ? "+" : ""}
-                              {member.balance.toLocaleString()}pt
+                              {member.balance.toLocaleString()}
+                              <span className="ml-0.5 text-[10px] text-[var(--ink-subtle)]">pt</span>
                             </span>
                           </div>
-                        </div>
-                        <div className="mt-1.5 flex items-center gap-3 pl-8 text-xs text-gray-500">
-                          <span>
-                            平均{" "}
-                            <span
-                              className={`font-medium ${getRankColor(member.avgRank)}`}
-                            >
-                              {member.avgRank.toFixed(2)}位
+                          <div className="mt-1.5 flex items-center gap-3 pl-8 text-[11px] text-[var(--ink-muted)]">
+                            <span>
+                              平均 <span className={`num-mono tabular font-medium ${mtClass}`}>
+                                {member.avgRank.toFixed(2)}位
+                              </span>
                             </span>
-                          </span>
-                          <span className="font-mono tabular-nums text-gray-600">
-                            {member.rankCounts.join("-")}
-                          </span>
-                          <span className="text-gray-400">
-                            (1着-2着-3着-4着)
-                          </span>
+                            <span className="num-mono tabular text-[var(--ink)]">
+                              {member.rankCounts.join("-")}
+                            </span>
+                            <span className="text-[var(--ink-subtle)]">(1-2-3-4着)</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         );
       })}
     </div>

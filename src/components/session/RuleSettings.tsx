@@ -1,4 +1,5 @@
 import type { SessionSettings } from "@/app/session/new/page";
+import { Card } from "@/components/ui";
 
 type Props = {
   settings: SessionSettings;
@@ -7,165 +8,221 @@ type Props = {
 };
 
 const RATE_OPTIONS = [
-  { value: "norate", label: "ノーレート" },
-  { value: "tengo", label: "テンゴ (1000点=50pt)" },
-  { value: "tenpin", label: "テンピン (1000点=100pt)" },
-  { value: "ten2", label: "点2 (1000点=200pt)" },
-  { value: "ten5", label: "点5 (1000点=500pt)" },
+  { value: "norate", label: "ノーレート", hint: "0pt" },
+  { value: "tengo", label: "テンゴ", hint: "1000点=50pt" },
+  { value: "tenpin", label: "テンピン", hint: "1000点=100pt" },
+  { value: "ten2", label: "点2", hint: "1000点=200pt" },
+  { value: "ten5", label: "点5", hint: "1000点=500pt" },
 ];
 
 const UMA_OPTIONS_4 = [
-  { value: "none", label: "ナシ" },
-  { value: "5-10", label: "5-10 (ゴットー)" },
-  { value: "10-20", label: "10-20 (ワンツー)" },
-  { value: "10-30", label: "10-30 (ワンスリー)" },
-  { value: "20-30", label: "20-30 (ツースリー)" },
+  { value: "none", label: "ナシ", hint: "ウマなし" },
+  { value: "5-10", label: "5-10", hint: "ゴットー" },
+  { value: "10-20", label: "10-20", hint: "ワンツー" },
+  { value: "10-30", label: "10-30", hint: "ワンスリー" },
+  { value: "20-30", label: "20-30", hint: "ツースリー" },
 ];
 
 const UMA_OPTIONS_3 = [
-  { value: "none", label: "ナシ" },
-  { value: "5-10", label: "10 (1位+10/3位-10)" },
-  { value: "10-20", label: "20 (1位+20/3位-20)" },
-  { value: "10-30", label: "30 (1位+30/3位-30)" },
-  { value: "20-30", label: "20-30 (1位+30/3位-20)" },
+  { value: "none", label: "ナシ", hint: "ウマなし" },
+  { value: "5-10", label: "10", hint: "1位+10 / 3位-10" },
+  { value: "10-20", label: "20", hint: "1位+20 / 3位-20" },
+  { value: "10-30", label: "30", hint: "1位+30 / 3位-30" },
+  { value: "20-30", label: "20-30", hint: "1位+30 / 3位-20" },
 ];
 
 const POINT_OPTIONS = [
-  { value: "25000", label: "25,000点" },
-  { value: "30000", label: "30,000点" },
+  { value: "25000", label: "25,000" },
+  { value: "30000", label: "30,000" },
 ];
 
 const RETURN_OPTIONS = [
-  { value: "30000", label: "30,000点" },
-  { value: "40000", label: "40,000点" },
+  { value: "30000", label: "30,000" },
+  { value: "40000", label: "40,000" },
 ];
 
 export function RuleSettings({ settings, onUpdate, playerCount = 4 }: Props) {
   const umaOptions = playerCount === 3 ? UMA_OPTIONS_3 : UMA_OPTIONS_4;
 
   return (
-    <div className="mb-4 rounded-xl bg-white p-4 shadow-md">
-      <h3 className="mb-3 text-base font-bold text-gray-700">⚙️ ルール設定</h3>
+    <Card padding="md">
+      <h3 className="font-serif-jp text-base font-bold text-[var(--ink)]">ルール</h3>
 
-      {/* レート */}
-      <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-600">
-          レート
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          {RATE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => onUpdate({ rate: option.value })}
-              className={`rounded-lg p-2 text-sm transition-all ${
-                settings.rate === option.value
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Field label="レート">
+        <PillGrid
+          cols={3}
+          options={RATE_OPTIONS}
+          value={settings.rate}
+          onSelect={(v) => onUpdate({ rate: v })}
+        />
+      </Field>
 
-      {/* ウマ */}
-      <div className="mb-4">
-        <label className="mb-2 block text-sm font-medium text-gray-600">
-          ウマ
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          {umaOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => onUpdate({ uma: option.value })}
-              className={`rounded-lg p-2 text-sm transition-all ${
-                settings.uma === option.value
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Field label="ウマ">
+        <PillGrid
+          cols={3}
+          options={umaOptions}
+          value={settings.uma}
+          onSelect={(v) => onUpdate({ uma: v })}
+        />
+      </Field>
 
-      {/* 持ち点・返し */}
-      <div className="mb-4 grid grid-cols-2 gap-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-600">
-            持ち点
-          </label>
-          <select
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Field label="持ち点" inline>
+          <SegRow
+            options={POINT_OPTIONS}
             value={settings.startPoints}
-            onChange={(e) => onUpdate({ startPoints: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-          >
-            {POINT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-600">
-            返し
-          </label>
-          <select
+            onSelect={(v) => onUpdate({ startPoints: v })}
+          />
+        </Field>
+        <Field label="返し点" inline>
+          <SegRow
+            options={RETURN_OPTIONS}
             value={settings.returnPoints}
-            onChange={(e) => onUpdate({ returnPoints: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-          >
-            {RETURN_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            onSelect={(v) => onUpdate({ returnPoints: v })}
+          />
+        </Field>
       </div>
 
-      {/* 飛び賞・チップ */}
-      <div className="grid grid-cols-2 gap-4">
-        <div
-          onClick={() => onUpdate({ tobi: !settings.tobi })}
-          className={`cursor-pointer rounded-lg p-3 transition-all ${
-            settings.tobi
-              ? "border-2 border-green-500 bg-green-100"
-              : "border-2 border-transparent bg-gray-100"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">飛び賞</span>
-            <span
-              className={`text-lg ${settings.tobi ? "text-green-600" : "text-gray-400"}`}
-            >
-              {settings.tobi ? "✓" : "○"}
-            </span>
-          </div>
-          <span className="text-xs text-gray-500">±10</span>
-        </div>
-        <div
-          onClick={() => onUpdate({ chip: !settings.chip })}
-          className={`cursor-pointer rounded-lg p-3 transition-all ${
-            settings.chip
-              ? "border-2 border-green-500 bg-green-100"
-              : "border-2 border-transparent bg-gray-100"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">チップ</span>
-            <span
-              className={`text-lg ${settings.chip ? "text-green-600" : "text-gray-400"}`}
-            >
-              {settings.chip ? "✓" : "○"}
-            </span>
-          </div>
-          <span className="text-xs text-gray-500">赤・一発・裏</span>
-        </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Toggle
+          label="飛び賞"
+          hint="±10pt"
+          on={settings.tobi}
+          onChange={() => onUpdate({ tobi: !settings.tobi })}
+        />
+        <Toggle
+          label="チップ"
+          hint="赤・一発・裏"
+          on={settings.chip}
+          onChange={() => onUpdate({ chip: !settings.chip })}
+        />
       </div>
+    </Card>
+  );
+}
+
+function Field({
+  label,
+  children,
+  inline = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  inline?: boolean;
+}) {
+  return (
+    <div className={inline ? "" : "mt-4"}>
+      <div className="mb-2 text-[11px] tracking-widest text-[var(--ink-subtle)]">{label}</div>
+      {children}
     </div>
+  );
+}
+
+function PillGrid({
+  cols,
+  options,
+  value,
+  onSelect,
+}: {
+  cols: number;
+  options: { value: string; label: string; hint: string }[];
+  value: string;
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+      {options.map((o) => {
+        const active = value === o.value;
+        return (
+          <button
+            key={o.value}
+            onClick={() => onSelect(o.value)}
+            className={`flex flex-col items-start rounded-[var(--radius-md)] border px-3 py-2 text-left transition-colors ${
+              active
+                ? "border-[var(--accent)] bg-[var(--surface)]"
+                : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--ink-subtle)]"
+            }`}
+          >
+            <span className={`text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--ink)]"}`}>
+              {o.label}
+            </span>
+            <span className="text-[10px] text-[var(--ink-subtle)]">{o.hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SegRow({
+  options,
+  value,
+  onSelect,
+}: {
+  options: { value: string; label: string }[];
+  value: string;
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <div className="flex rounded-[var(--radius-md)] border border-[var(--line)] p-0.5">
+      {options.map((o) => {
+        const active = value === o.value;
+        return (
+          <button
+            key={o.value}
+            onClick={() => onSelect(o.value)}
+            className={`flex-1 rounded-[var(--radius-sm)] py-1.5 text-xs font-medium transition-colors ${
+              active
+                ? "bg-[var(--accent)] text-[var(--accent-ink)]"
+                : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Toggle({
+  label,
+  hint,
+  on,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  on: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      onClick={onChange}
+      className={`flex items-center justify-between rounded-[var(--radius-md)] border px-3 py-2.5 text-left transition-colors ${
+        on
+          ? "border-[var(--accent)] bg-[var(--surface)]"
+          : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--ink-subtle)]"
+      }`}
+    >
+      <div>
+        <div className={`text-sm font-medium ${on ? "text-[var(--accent)]" : "text-[var(--ink)]"}`}>
+          {label}
+        </div>
+        <div className="text-[10px] text-[var(--ink-subtle)]">{hint}</div>
+      </div>
+      <span
+        className={`inline-flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
+          on ? "bg-[var(--accent)]" : "bg-[var(--surface-2)]"
+        }`}
+        aria-hidden
+      >
+        <span
+          className={`h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            on ? "translate-x-4" : ""
+          }`}
+        />
+      </span>
+    </button>
   );
 }

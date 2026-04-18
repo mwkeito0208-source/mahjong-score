@@ -1,20 +1,21 @@
 import type { OverviewStats } from "@/lib/stats-calc";
+import { Card, Stat } from "@/components/ui";
 
 type Props = {
   stats: OverviewStats;
 };
 
-function getRankColor(rank: number): string {
-  if (rank <= 2.0) return "text-green-600";
-  if (rank <= 2.5) return "text-yellow-600";
-  return "text-red-600";
+function getRankTone(rank: number): "positive" | "neutral" | "negative" {
+  if (rank <= 2.0) return "positive";
+  if (rank <= 2.5) return "neutral";
+  return "negative";
 }
 
-const RANK_COLORS = [
-  "bg-yellow-400",  // 1位
-  "bg-gray-300",    // 2位
-  "bg-orange-300",  // 3位
-  "bg-gray-200",    // 4位
+const RANK_BAR_COLOR = [
+  "var(--gold)",
+  "#a8a8ae",
+  "#c98a5a",
+  "var(--ink-subtle)",
 ];
 
 export function OverviewTab({ stats }: Props) {
@@ -23,75 +24,70 @@ export function OverviewTab({ stats }: Props) {
   return (
     <div className="space-y-4">
       {/* 通算収支 */}
-      <div className="rounded-xl bg-gradient-to-r from-green-500 to-green-600 p-5 text-white shadow-md">
-        <div className="mb-1 text-sm opacity-80">通算収支</div>
-        <div className="text-3xl font-bold">
+      <Card padding="lg" accent="shu">
+        <div className="text-[11px] tracking-[0.25em] text-[var(--ink-subtle)]">通算収支</div>
+        <div
+          className={`mt-1 num-mono tabular text-4xl font-bold ${
+            stats.totalBalance >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+          }`}
+        >
           {stats.totalBalance >= 0 ? "+" : ""}
-          {stats.totalBalance.toLocaleString()}pt
+          {stats.totalBalance.toLocaleString()}
+          <span className="ml-1 text-base text-[var(--ink-subtle)]">pt</span>
         </div>
-        <div className="mt-2 text-sm opacity-80">
-          {stats.totalSessions}セッション / {stats.totalRounds}半荘
+        <div className="mt-2 text-xs text-[var(--ink-muted)]">
+          {stats.totalSessions}対局・{stats.totalRounds}半荘
         </div>
-      </div>
+      </Card>
 
-      {/* 平均順位 */}
-      <div className="rounded-xl bg-white p-4 shadow-md">
-        <div className="mb-2 text-sm text-gray-500">平均順位</div>
-        <div className="flex items-end gap-2">
-          <span
-            className={`text-4xl font-bold ${getRankColor(stats.avgRank)}`}
-          >
-            {stats.avgRank.toFixed(2)}
-          </span>
-          <span className="mb-1 text-gray-400">位</span>
-        </div>
+      {/* 平均順位 + 飛び */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card padding="md">
+          <Stat
+            label="平均順位"
+            value={stats.avgRank.toFixed(2)}
+            sub="位"
+            tone={getRankTone(stats.avgRank)}
+            size="lg"
+          />
+        </Card>
+        <Card padding="md">
+          <div className="flex items-end justify-between">
+            <Stat label="飛び" value={stats.tobi} sub="回" tone="neutral" />
+            <Stat label="率" value={`${stats.tobiRate}%`} align="right" tone="neutral" />
+          </div>
+        </Card>
       </div>
 
       {/* 順位分布 */}
-      <div className="rounded-xl bg-white p-4 shadow-md">
-        <div className="mb-3 text-sm text-gray-500">順位分布</div>
-        <div className="space-y-2">
+      <Card padding="md">
+        <h3 className="font-serif-jp text-base font-bold text-[var(--ink)]">順位分布</h3>
+        <div className="mt-3 space-y-2">
           {stats.rankCounts.map((count, i) => {
-            const percent = totalGames > 0
-              ? ((count / totalGames) * 100).toFixed(1)
-              : "0.0";
+            const percent =
+              totalGames > 0 ? (count / totalGames) * 100 : 0;
             return (
               <div key={i} className="flex items-center gap-3">
-                <span className="w-8 text-sm text-gray-600">
+                <span className="w-6 text-xs text-[var(--ink-muted)]">
                   {i + 1}位
                 </span>
-                <div className="h-6 flex-1 overflow-hidden rounded-full bg-gray-100">
+                <div className="h-4 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
                   <div
-                    className={`h-full ${RANK_COLORS[i] ?? "bg-gray-200"} rounded-full`}
-                    style={{ width: `${percent}%` }}
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${percent}%`,
+                      background: RANK_BAR_COLOR[i] ?? "var(--ink-subtle)",
+                    }}
                   />
                 </div>
-                <span className="w-20 text-right text-sm text-gray-600">
-                  {count}回 ({percent}%)
+                <span className="num-mono tabular w-20 text-right text-xs text-[var(--ink-muted)]">
+                  {count}回 ({percent.toFixed(1)}%)
                 </span>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* 飛び率 */}
-      <div className="rounded-xl bg-white p-4 shadow-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm text-gray-500">飛び回数</div>
-            <div className="text-2xl font-bold text-gray-800">
-              {stats.tobi}回
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">飛び率</div>
-            <div className="text-2xl font-bold text-gray-800">
-              {stats.tobiRate}%
-            </div>
-          </div>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

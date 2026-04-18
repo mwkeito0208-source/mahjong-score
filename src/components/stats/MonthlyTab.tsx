@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui";
+
 type MonthlyStat = {
   month: string;
   sessions: number;
@@ -9,25 +11,37 @@ type Props = {
 };
 
 export function MonthlyTab({ data }: Props) {
+  if (data.length === 0) {
+    return (
+      <Card padding="lg" className="text-center">
+        <p className="text-sm text-[var(--ink-muted)]">データがありません</p>
+      </Card>
+    );
+  }
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {data.map((month) => (
-        <div key={month.month} className="rounded-xl bg-white p-4 shadow-md">
+        <Card key={month.month} padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-bold text-gray-800">{month.month}</div>
-              <div className="text-sm text-gray-500">
-                {month.sessions}セッション
+              <div className="font-serif-jp text-base font-bold text-[var(--ink)]">
+                {month.month}
+              </div>
+              <div className="mt-0.5 text-xs text-[var(--ink-muted)]">
+                {month.sessions}対局
               </div>
             </div>
             <div
-              className={`text-xl font-bold ${month.balance >= 0 ? "text-green-600" : "text-red-600"}`}
+              className={`num-mono tabular text-lg font-bold ${
+                month.balance >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+              }`}
             >
               {month.balance >= 0 ? "+" : ""}
-              {month.balance.toLocaleString()}pt
+              {month.balance.toLocaleString()}
+              <span className="ml-0.5 text-[10px] text-[var(--ink-subtle)]">pt</span>
             </div>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

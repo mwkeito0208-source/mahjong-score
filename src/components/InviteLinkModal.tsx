@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Group } from "@/lib/types";
+import { Modal, Button } from "@/components/ui";
 
 type Props = {
   group: Group;
@@ -30,50 +31,44 @@ export function InviteLinkModal({ group, onClose }: Props) {
 
   const handleShare = () => {
     const text = `麻雀やろう！\n「${group.name}」に参加してね\n${inviteLink}`;
-    if (navigator.share) {
-      navigator.share({ text });
-    }
+    if (navigator.share) navigator.share({ text }).catch(() => {});
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6">
-        <h3 className="mb-2 text-center text-lg font-bold text-gray-800">
-          🔗 招待リンク
-        </h3>
-        <p className="mb-4 text-center text-sm text-gray-500">
-          「{group.name}」に友達を招待
-        </p>
-
-        <div className="mb-4 break-all rounded-lg bg-gray-50 p-3">
-          <code className="text-sm text-gray-700">{inviteLink}</code>
-        </div>
-
-        <button
-          onClick={handleCopy}
-          className={`mb-3 w-full rounded-lg py-3 text-base font-bold transition-all ${
-            copied
-              ? "bg-green-500 text-white"
-              : "bg-green-600 text-white hover:bg-green-700"
-          }`}
-        >
-          {copied ? "✓ コピーしました！" : "📋 リンクをコピー"}
-        </button>
-
-        <button
-          onClick={handleShare}
-          className="mb-3 w-full rounded-lg bg-green-400 py-3 text-base font-bold text-white hover:bg-green-500"
-        >
-          💬 LINEで共有
-        </button>
-
-        <button
-          onClick={onClose}
-          className="w-full rounded-lg bg-gray-200 py-3 text-base text-gray-700 hover:bg-gray-300"
-        >
+    <Modal
+      open
+      onClose={onClose}
+      title="招待リンク"
+      size="sm"
+      footer={
+        <Button variant="secondary" size="md" fullWidth onClick={onClose}>
           閉じる
-        </button>
+        </Button>
+      }
+    >
+      <p className="text-sm text-[var(--ink-muted)]">
+        「<span className="font-medium text-[var(--ink)]">{group.name}</span>」に友達を招待します。
+      </p>
+
+      <div className="mt-3 break-all rounded-[var(--radius-md)] border border-[var(--line)] bg-[var(--surface-2)] p-3">
+        <code className="num-mono text-xs text-[var(--ink)]">{inviteLink}</code>
       </div>
-    </div>
+
+      <div className="mt-3 space-y-2">
+        <Button
+          variant={copied ? "secondary" : "primary"}
+          size="md"
+          fullWidth
+          onClick={handleCopy}
+        >
+          {copied ? "✓ コピーしました" : "リンクをコピー"}
+        </Button>
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <Button variant="secondary" size="md" fullWidth onClick={handleShare}>
+            共有する
+          </Button>
+        )}
+      </div>
+    </Modal>
   );
 }
