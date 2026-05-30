@@ -28,7 +28,7 @@ const RANK_TEXT = [
 
 /** 順位別の背景色（薄い） */
 const RANK_BG = [
-  "bg-[color:var(--color-kin-100)]",       // 一位 = 金の淡
+  "bg-[color:var(--rank-first)]",          // 一位 = 金の淡（テーマ追従）
   "",
   "",
   "bg-[var(--surface-2)]",                 // 四位 = わずかに沈める

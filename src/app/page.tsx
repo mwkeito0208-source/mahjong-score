@@ -57,7 +57,7 @@ export default function Home() {
   };
 
   const active = useMemo(
-    () => sessions.filter((s) => s.status === "active")
+    () => sessions.filter((s) => s.status === "active" && s.rounds.length > 0)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     [sessions],
   );

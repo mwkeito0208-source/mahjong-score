@@ -61,6 +61,7 @@
   --color-gold:        var(--gold);
   --color-positive:    var(--positive);
   --color-negative:    var(--negative);
+  --color-rank-first:  var(--rank-first);   /* 一位セルの背景（テーマ追従） */
 
   /* Radii — 角丸控えめ（和の直線性） */
   --radius-xs: 4px;
@@ -93,45 +94,48 @@
   --gold:        #a8874a;
   --positive:    #2f5a4b;          /* 緑青 */
   --negative:    #a41f25;
+  --rank-first:  #f4ead3;          /* 一位 = 金の淡 */
 }
 
 /* ---------- Dark ---------- */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg:          #121213;
-  --bg-subtle:   #18181a;
-  --surface:     #1e1e20;
-  --surface-2:   #26262a;
-  --line:        rgba(245, 239, 228, 0.08);
-  --line-strong: rgba(245, 239, 228, 0.16);
+  --bg:          #1b1a18;          /* 墨寄りの温かいチャコール（純黒を避ける） */
+  --bg-subtle:   #232220;
+  --surface:     #2a2825;          /* 背景との段差をはっきり */
+  --surface-2:   #322f2b;
+  --line:        rgba(245, 239, 228, 0.10);
+  --line-strong: rgba(245, 239, 228, 0.18);
   --ink:         #f1ece0;
   --ink-muted:   #b0aea6;
-  --ink-subtle:  #7c7a74;
+  --ink-subtle:  #87847c;
   --accent:      #d84a50;          /* 朱 明るめ */
   --accent-ink:  #ffffff;
   --gold:        #dcc38e;
-  --positive:    #5a8a79;
+  --positive:    #6fa28d;
   --negative:    #e77177;
+  --rank-first:  #3d3322;          /* 一位 = 金を沈めた暗色 */
 }
 
 /* システム追従（data-theme未設定時のみ） */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --bg:          #121213;
-    --bg-subtle:   #18181a;
-    --surface:     #1e1e20;
-    --surface-2:   #26262a;
-    --line:        rgba(245, 239, 228, 0.08);
-    --line-strong: rgba(245, 239, 228, 0.16);
+    --bg:          #1b1a18;
+    --bg-subtle:   #232220;
+    --surface:     #2a2825;
+    --surface-2:   #322f2b;
+    --line:        rgba(245, 239, 228, 0.10);
+    --line-strong: rgba(245, 239, 228, 0.18);
     --ink:         #f1ece0;
     --ink-muted:   #b0aea6;
-    --ink-subtle:  #7c7a74;
+    --ink-subtle:  #87847c;
     --accent:      #d84a50;
     --accent-ink:  #ffffff;
     --gold:        #dcc38e;
-    --positive:    #5a8a79;
+    --positive:    #6fa28d;
     --negative:    #e77177;
+    --rank-first:  #3d3322;
   }
 }
 

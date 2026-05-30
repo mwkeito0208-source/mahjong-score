@@ -34,6 +34,7 @@ export default function SettlementPage() {
   const updateExpense = useAppStore((s) => s.updateExpense);
   const removeExpense = useAppStore((s) => s.removeExpense);
   const updateChipCounts = useAppStore((s) => s.updateChipCounts);
+  const settleSession = useAppStore((s) => s.settleSession);
 
   const session = getSession(sessions, sessionId);
   const group = session ? getGroup(groups, session.groupId) : undefined;
@@ -223,6 +224,30 @@ export default function SettlementPage() {
           finalBalances={finalBalances}
           chipEnabled={chipConfig.enabled}
         />
+
+        {/* 対局を終える（清算確定 → 戦績へ反映） */}
+        {session.status === "active" ? (
+          <div className="mt-6 border-t border-[var(--line)] pt-5">
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                settleSession(session.id);
+                router.push(group ? `/group/${group.id}` : "/");
+              }}
+            >
+              この対局を終える
+            </Button>
+            <p className="mt-2 text-center text-xs text-[var(--ink-subtle)]">
+              清算を確定すると「続きの卓」から外れ、戦績に記録されます
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 border-t border-[var(--line)] pt-5 text-center">
+            <p className="text-sm text-[var(--positive)]">✓ 清算済みの対局です</p>
+          </div>
+        )}
       </main>
 
       {showChipInput && (
