@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/store";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchGroups, fetchSessions, fetchMyGroupIds } from "@/lib/supabase-fetch";
+import { fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
 
 /**
  * Supabase からのリモートデータ取得を複数箇所から呼ばれても1回にまとめるため、
@@ -31,10 +31,10 @@ export function useSyncFromSupabase(): boolean {
         lastSyncedUserId = user.id;
         syncInFlight = (async () => {
           try {
-            const groupIds = await fetchMyGroupIds(user.id);
+            // 全グループ・全セッションを取得（user_id でのフィルタはしない）
             const [groups, sessions] = await Promise.all([
-              fetchGroups(user.id),
-              fetchSessions(groupIds),
+              fetchGroups(),
+              fetchSessions(),
             ]);
             mergeRemoteData(groups, sessions);
           } catch (e) {

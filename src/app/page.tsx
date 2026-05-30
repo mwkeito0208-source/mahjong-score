@@ -91,10 +91,18 @@ export default function Home() {
     if (!hydrated || !synced || !user || migrationDone) return;
     (async () => {
       try {
-        const myGroupIds = await fetchMyGroupIds(user.id);
-        if (groups.length > 0 && myGroupIds.length === 0) {
-          for (const group of groups) await syncAddGroup(group);
+        // リモートに存在しないローカルグループ/セッションだけを push する。
+        // （全データ共有モデルのため user_id では絞らない）
+        const remoteGroups = await fetchGroups();
+        const remoteGroupIds = new Set(remoteGroups.map((g) => g.id));
+        const remoteSessions = await fetchSessions();
+        const remoteSessionIds = new Set(remoteSessions.map((s) => s.id));
+
+        const localOnlyGroups = groups.filter((g) => !remoteGroupIds.has(g.id));
+        if (localOnlyGroups.length > 0) {
+          for (const group of localOnlyGroups) await syncAddGroup(group);
           for (const session of sessions) {
+            if (remoteSessionIds.has(session.id)) continue;
             await syncCreateSession(session);
             for (let i = 0; i < session.rounds.length; i++) {
               await syncAddRound(session.id, session.rounds[i], i + 1);
@@ -103,7 +111,6 @@ export default function Home() {
               await syncAddExpense(session.id, expense);
             }
           }
-          setShowNameRegistration(true);
         }
       } catch {
         // ignore
