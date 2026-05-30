@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { fetchGroup, addMemberToGroup, fetchGroups, fetchSessions, linkMemberUserId, fetchMyGroupIds } from "@/lib/supabase-fetch";
+import { fetchGroup, addMemberToGroup, fetchGroups, fetchSessions, linkMemberUserId } from "@/lib/supabase-fetch";
 import { useAppStore } from "@/store";
 import { useHydration } from "@/store/useHydration";
 import { useAuth } from "@/components/AuthProvider";
@@ -31,10 +31,10 @@ export default function JoinGroupPage() {
   const syncAllData = async () => {
     if (!user?.id) return;
     try {
-      const groupIds = await fetchMyGroupIds(user.id);
+      // 全データ取得（user_id では絞らない / 全データ共有モデル）
       const [remoteGroups, remoteSessions] = await Promise.all([
-        fetchGroups(user.id),
-        fetchSessions(groupIds),
+        fetchGroups(),
+        fetchSessions(),
       ]);
       mergeRemoteData(remoteGroups, remoteSessions);
     } catch {

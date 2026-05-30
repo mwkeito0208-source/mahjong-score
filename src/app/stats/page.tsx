@@ -5,7 +5,7 @@ import { OverviewTab } from "@/components/stats/OverviewTab";
 import { MonthlyTab } from "@/components/stats/MonthlyTab";
 import { OpponentsTab } from "@/components/stats/OpponentsTab";
 import { GroupsTab, type GroupStat } from "@/components/stats/GroupsTab";
-import { fetchGroups, fetchSessions, fetchMyGroupIds } from "@/lib/supabase-fetch";
+import { fetchGroups, fetchSessions } from "@/lib/supabase-fetch";
 import { useAuth } from "@/components/AuthProvider";
 import {
   getAllMemberNames,
@@ -52,10 +52,10 @@ export default function StatsPage() {
     if (!user) return;
     (async () => {
       try {
-        const groupIds = await fetchMyGroupIds(user.id);
+        // 全データ取得（user_id では絞らない / 全データ共有モデル）
         const [g, s] = await Promise.all([
-          fetchGroups(user.id),
-          fetchSessions(groupIds),
+          fetchGroups(),
+          fetchSessions(),
         ]);
         setGroups(g);
         setSessions(s);
