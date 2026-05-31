@@ -47,22 +47,19 @@ function sessionMahjongBalances(session: Session): number[] {
   }
 
   const { settings } = session;
-  const roundData = session.rounds.map((r) => ({
-    scores: r.scores,
-    tobi: r.tobi,
-  }));
 
   // 各ラウンドのスコア合計
   const memberCount = session.members.length;
   const totals = Array(memberCount).fill(0);
-  for (const round of roundData) {
+  for (const round of session.rounds) {
     const scores = calculateRoundScores(
       round.scores,
       settings.returnPoints,
       settings.uma,
       settings.tobiPenalty,
       round.tobi,
-      settings.startPoints
+      settings.startPoints,
+      round.inputMode
     );
     scores.forEach((s, i) => {
       totals[i] += s;
@@ -73,7 +70,10 @@ function sessionMahjongBalances(session: Session): number[] {
 }
 
 /** 1ラウンドで各メンバーの順位を取得 (null=抜け番) */
-function roundRanks(scores: (number | null)[]): (number | null)[] {
+function roundRanks(
+  scores: (number | null)[],
+  inputMode?: "raw" | "points"
+): (number | null)[] {
   const activeScores: number[] = [];
   const activeIndices: number[] = [];
   scores.forEach((s, i) => {
@@ -83,8 +83,9 @@ function roundRanks(scores: (number | null)[]): (number | null)[] {
     }
   });
 
-  const rounded = activeScores.map(roundScore);
-  const ranks = getRanks(rounded);
+  // ポイント入力モードはスコアがそのまま最終ポイント（五捨六入しない）
+  const ranked = inputMode === "points" ? activeScores : activeScores.map(roundScore);
+  const ranks = getRanks(ranked);
 
   const result: (number | null)[] = scores.map(() => null);
   activeIndices.forEach((origIdx, activeIdx) => {
@@ -132,7 +133,7 @@ export function calcOverview(
     if (activeCount > maxRankSlots) maxRankSlots = activeCount;
 
     for (const round of session.rounds) {
-      const ranks = roundRanks(round.scores);
+      const ranks = roundRanks(round.scores, round.inputMode);
       const myRank = ranks[myIdx];
       if (myRank !== null) {
         totalRounds++;
@@ -231,7 +232,7 @@ export function calcOpponents(
 
       // この対戦相手とのセッションでの自分の平均順位
       for (const round of session.rounds) {
-        const ranks = roundRanks(round.scores);
+        const ranks = roundRanks(round.scores, round.inputMode);
         const myRank = ranks[myIdx];
         if (myRank !== null) {
           entry.rankSum += myRank;
@@ -337,7 +338,7 @@ export function calcGroups(
 
       // ラウンド別順位集計
       for (const round of session.rounds) {
-        const ranks = roundRanks(round.scores);
+        const ranks = roundRanks(round.scores, round.inputMode);
 
         // 自分
         const myRank = ranks[myIdx];

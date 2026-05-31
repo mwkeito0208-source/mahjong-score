@@ -57,6 +57,7 @@ export default function GroupDetailPage() {
       const roundDataList: RoundData[] = ses.rounds.map((r) => ({
         scores: r.scores,
         tobi: r.tobi,
+        inputMode: r.inputMode,
       }));
       const totals =
         roundDataList.length > 0
@@ -97,6 +98,7 @@ export default function GroupDetailPage() {
       const roundDataList: RoundData[] = ses.rounds.map((r) => ({
         scores: r.scores,
         tobi: r.tobi,
+        inputMode: r.inputMode,
       }));
       if (roundDataList.length === 0) continue;
       const totals = calculateTotals(
