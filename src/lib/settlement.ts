@@ -95,6 +95,7 @@ export function calculateSettlements(
 export function generateShareText(
   sessionName: string,
   members: string[],
+  mahjongTotals: number[],
   mahjongBalances: number[],
   chipBalances: number[],
   expenseBalances: number[],
@@ -102,34 +103,40 @@ export function generateShareText(
   finalSettlements: Settlement[],
   chipEnabled: boolean
 ): string {
-  let text = `📊 ${sessionName} 精算\n\n`;
+  const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toLocaleString()}pt`;
+  const fmtScore = (n: number) => `${n >= 0 ? "+" : ""}${n.toLocaleString()}`;
 
-  text += "【最終精算】\n";
+  let text = `【${sessionName}】\n\n`;
+
+  text += "麻雀結果\n";
+  for (let i = 0; i < members.length; i++) {
+    text += `${members[i]}　${fmtScore(mahjongTotals[i])}\n`;
+  }
+
+  if (chipEnabled) {
+    text += "\nチップ\n";
+    for (let i = 0; i < members.length; i++) {
+      text += `${members[i]}　${fmt(chipBalances[i])}\n`;
+    }
+  }
+
+  if (expenseBalances.some((b) => b !== 0)) {
+    text += "\n場代等\n";
+    for (let i = 0; i < members.length; i++) {
+      if (expenseBalances[i] !== 0) {
+        text += `${members[i]}　${fmt(expenseBalances[i])}\n`;
+      }
+    }
+  }
+
+  text += "\n精算\n";
   if (finalSettlements.length > 0) {
     for (const s of finalSettlements) {
-      text += `${s.from} → ${s.to}  ${s.amount.toLocaleString()}pt\n`;
+      text += `${s.from} → ${s.to}　${s.amount.toLocaleString()}pt\n`;
     }
   } else {
     text += "精算なし\n";
   }
-
-  text += "\n【内訳】\n";
-  for (let i = 0; i < members.length; i++) {
-    const sign = finalBalances[i] >= 0 ? "+" : "";
-    const mSign = mahjongBalances[i] >= 0 ? "+" : "";
-    const cSign = chipBalances[i] >= 0 ? "+" : "";
-    const eSign = expenseBalances[i] >= 0 ? "+" : "";
-    text += `${members[i]}: ${sign}${finalBalances[i].toLocaleString()}pt`;
-    if (chipEnabled) {
-      text += ` (麻雀${mSign}${mahjongBalances[i].toLocaleString()} / チップ${cSign}${chipBalances[i].toLocaleString()} / 費用${eSign}${expenseBalances[i].toLocaleString()})`;
-    } else {
-      text += ` (麻雀${mSign}${mahjongBalances[i].toLocaleString()} / 費用${eSign}${expenseBalances[i].toLocaleString()})`;
-    }
-    text += "\n";
-  }
-
-  const totalCheck = finalBalances.reduce((sum, b) => sum + b, 0);
-  text += `\n合計チェック: ${totalCheck >= 0 ? "+" : ""}${totalCheck.toLocaleString()}pt`;
 
   return text;
 }

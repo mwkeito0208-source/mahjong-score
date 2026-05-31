@@ -68,6 +68,7 @@ export default function SettlementPage() {
   const roundDataList: RoundData[] = session.rounds.map((r) => ({
     scores: r.scores,
     tobi: r.tobi,
+    inputMode: r.inputMode,
   }));
   const totals =
     roundDataList.length > 0
@@ -120,6 +121,7 @@ export default function SettlementPage() {
     const text = generateShareText(
       sessionName,
       members,
+      totals,
       mahjongBalances,
       chipBalances,
       expenseBalances,
