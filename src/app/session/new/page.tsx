@@ -11,44 +11,15 @@ import { useAppStore } from "@/store";
 import { getGroup, getMemberHistory } from "@/store/selectors";
 import { useHydration } from "@/store/useHydration";
 import { Button } from "@/components/ui";
+import {
+  fromChipConfigForm,
+  fromSettingsForm,
+  type ChipConfigForm,
+  type SessionSettingsForm,
+} from "@/lib/session-settings";
 
-export type SessionSettings = {
-  rate: string;
-  uma: string;
-  startPoints: string;
-  returnPoints: string;
-  tobi: boolean;
-  chip: boolean;
-};
-
-export type ChipConfig = {
-  startChips: number;
-  pricePerChip: number;
-};
-
-const RATE_MAP: Record<string, number> = {
-  norate: 0,
-  tengo: 50,
-  tenpin: 100,
-  ten2: 200,
-  ten5: 500,
-};
-
-const UMA_MAP_4: Record<string, number[]> = {
-  none: [0, 0, 0, 0],
-  "5-10": [10, 5, -5, -10],
-  "10-20": [20, 10, -10, -20],
-  "10-30": [30, 10, -10, -30],
-  "20-30": [30, 20, -20, -30],
-};
-
-const UMA_MAP_3: Record<string, number[]> = {
-  none: [0, 0, 0],
-  "5-10": [10, 0, -10],
-  "10-20": [20, 0, -20],
-  "10-30": [30, 0, -30],
-  "20-30": [30, -10, -20],
-};
+export type SessionSettings = SessionSettingsForm;
+export type ChipConfig = ChipConfigForm;
 
 export default function NewSessionPage() {
   return (
@@ -112,8 +83,6 @@ function NewSessionContent() {
   };
 
   const canStart = selectedMembers.length >= 3 && selectedMembers.length <= 5;
-  const isThreePlayer = selectedMembers.length === 3;
-  const umaMap = isThreePlayer ? UMA_MAP_3 : UMA_MAP_4;
 
   const handleStart = () => {
     if (!canStart) return;
@@ -126,19 +95,8 @@ function NewSessionContent() {
     const session = createSession({
       groupId,
       members: selectedMembers,
-      settings: {
-        rate: RATE_MAP[settings.rate] ?? 100,
-        uma: umaMap[settings.uma] ?? (isThreePlayer ? [30, 0, -30] : [30, 10, -10, -30]),
-        startPoints: parseInt(settings.startPoints) / 1000,
-        returnPoints: parseInt(settings.returnPoints) / 1000,
-        tobi: settings.tobi,
-        tobiPenalty: 10,
-      },
-      chipConfig: {
-        enabled: settings.chip,
-        startChips: chipSettings.startChips,
-        pricePerChip: chipSettings.pricePerChip,
-      },
+      settings: fromSettingsForm(settings, selectedMembers.length),
+      chipConfig: fromChipConfigForm(chipSettings, settings.chip),
     });
     router.push(`/session/${session.id}/score`);
   };

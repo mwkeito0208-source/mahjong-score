@@ -1,8 +1,8 @@
-import type { SessionSettings, ChipConfig } from "@/app/session/new/page";
+import type { SessionSettingsForm, ChipConfigForm } from "@/lib/session-settings";
 
 type Props = {
-  settings: SessionSettings;
-  chipSettings: ChipConfig;
+  settings: SessionSettingsForm;
+  chipSettings: ChipConfigForm;
 };
 
 const RATE_LABELS: Record<string, string> = {

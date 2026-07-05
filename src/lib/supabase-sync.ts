@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Group, Session, Round, Expense } from "./types";
+import type { Group, Session, Round, Expense, SessionSettings, ChipConfig } from "./types";
 import { notifySyncError } from "./sync-status";
 
 function warn(label: string, error: unknown) {
@@ -271,6 +271,22 @@ export async function syncSettleSession(sessionId: string) {
     if (error) throw error;
   } catch (e) {
     warn("syncSettleSession", e);
+  }
+}
+
+export async function syncUpdateSessionSettings(
+  sessionId: string,
+  settings: SessionSettings,
+  chipConfig: ChipConfig
+) {
+  try {
+    const { error } = await supabase
+      .from("sessions")
+      .update({ settings, chip_config: chipConfig })
+      .eq("id", sessionId);
+    if (error) throw error;
+  } catch (e) {
+    warn("syncUpdateSessionSettings", e);
   }
 }
 

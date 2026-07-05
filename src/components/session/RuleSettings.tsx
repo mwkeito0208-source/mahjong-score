@@ -1,9 +1,9 @@
-import type { SessionSettings } from "@/app/session/new/page";
+import type { SessionSettingsForm } from "@/lib/session-settings";
 import { Card } from "@/components/ui";
 
 type Props = {
-  settings: SessionSettings;
-  onUpdate: (patch: Partial<SessionSettings>) => void;
+  settings: SessionSettingsForm;
+  onUpdate: (patch: Partial<SessionSettingsForm>) => void;
   playerCount?: number;
 };
 

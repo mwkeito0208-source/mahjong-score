@@ -1,9 +1,9 @@
-import type { ChipConfig } from "@/app/session/new/page";
+import type { ChipConfigForm } from "@/lib/session-settings";
 import { Card } from "@/components/ui";
 
 type Props = {
-  chipSettings: ChipConfig;
-  onUpdate: (patch: Partial<ChipConfig>) => void;
+  chipSettings: ChipConfigForm;
+  onUpdate: (patch: Partial<ChipConfigForm>) => void;
 };
 
 const CHIP_COUNTS = [20, 25, 30];

@@ -18,6 +18,7 @@ import {
   syncAddRound,
   syncUpdateRound,
   syncDeleteRound,
+  syncUpdateSessionSettings,
   syncUpdateChipCounts,
   syncAddExpense,
   syncUpdateExpense,
@@ -46,6 +47,11 @@ type Actions = {
   addRound: (sessionId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[], inputMode?: "raw" | "points") => void;
   updateRound: (sessionId: string, roundId: string, scores: (number | null)[], tobi?: TobiInfo | TobiInfo[], inputMode?: "raw" | "points") => void;
   deleteRound: (sessionId: string, roundId: string) => void;
+  updateSessionSettings: (
+    sessionId: string,
+    settings: SessionSettings,
+    chipConfig: ChipConfig
+  ) => void;
   updateChipCounts: (sessionId: string, counts: number[]) => void;
   addExpense: (sessionId: string, expense: Omit<Expense, "id">) => void;
   updateExpense: (sessionId: string, expenseId: string, patch: Partial<Omit<Expense, "id">>) => void;
@@ -168,6 +174,15 @@ export const useAppStore = create<State & Actions>()(
           ),
         }));
         syncDeleteRound(roundId);
+      },
+
+      updateSessionSettings: (sessionId, settings, chipConfig) => {
+        set((s) => ({
+          sessions: s.sessions.map((ses) =>
+            ses.id === sessionId ? { ...ses, settings, chipConfig } : ses
+          ),
+        }));
+        syncUpdateSessionSettings(sessionId, settings, chipConfig);
       },
 
       updateChipCounts: (sessionId, counts) => {

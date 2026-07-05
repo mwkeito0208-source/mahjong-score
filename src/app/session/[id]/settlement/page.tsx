@@ -7,6 +7,7 @@ import { SettlementList } from "@/components/settlement/SettlementList";
 import { ExpenseSection } from "@/components/settlement/ExpenseSection";
 import { ChipInputModal } from "@/components/settlement/ChipInputModal";
 import { BreakdownDetails } from "@/components/settlement/BreakdownDetails";
+import { EditSessionSettingsModal } from "@/components/session/EditSessionSettingsModal";
 import {
   calculateExpenseBalances,
   calculateChipBalances,
@@ -35,12 +36,14 @@ export default function SettlementPage() {
   const removeExpense = useAppStore((s) => s.removeExpense);
   const updateChipCounts = useAppStore((s) => s.updateChipCounts);
   const settleSession = useAppStore((s) => s.settleSession);
+  const updateSessionSettings = useAppStore((s) => s.updateSessionSettings);
 
   const session = getSession(sessions, sessionId);
   const group = session ? getGroup(groups, session.groupId) : undefined;
 
   const [showChipInput, setShowChipInput] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showEditSettings, setShowEditSettings] = useState(false);
 
   if (!hydrated || (!session && !synced)) {
     return (
@@ -160,7 +163,14 @@ export default function SettlementPage() {
             </div>
             <div className="mt-0.5 text-[10px] text-[var(--ink-subtle)] truncate">{sessionName}</div>
           </div>
-          <div className="w-16" />
+          <div className="text-right">
+            <button
+              onClick={() => setShowEditSettings(true)}
+              className="whitespace-nowrap text-xs text-[var(--ink-muted)] hover:text-[var(--accent)]"
+            >
+              設定を修正
+            </button>
+          </div>
         </div>
       </header>
 
@@ -262,6 +272,17 @@ export default function SettlementPage() {
             setShowChipInput(false);
           }}
           onClose={() => setShowChipInput(false)}
+        />
+      )}
+
+      {showEditSettings && (
+        <EditSessionSettingsModal
+          session={session}
+          onSave={(newSettings, newChipConfig) => {
+            updateSessionSettings(session.id, newSettings, newChipConfig);
+            setShowEditSettings(false);
+          }}
+          onClose={() => setShowEditSettings(false)}
         />
       )}
     </div>

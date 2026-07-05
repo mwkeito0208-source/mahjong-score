@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ScoreTable } from "@/components/score/ScoreTable";
 import { AddRoundModal } from "@/components/score/AddRoundModal";
+import { EditSessionSettingsModal } from "@/components/session/EditSessionSettingsModal";
 import {
   roundScore,
   getRanks,
@@ -46,6 +47,7 @@ export default function SessionPage() {
   const addRound = useAppStore((s) => s.addRound);
   const updateRound = useAppStore((s) => s.updateRound);
   const deleteRound = useAppStore((s) => s.deleteRound);
+  const updateSessionSettings = useAppStore((s) => s.updateSessionSettings);
 
   const session = getSession(sessions, sessionId);
   const group = session ? getGroup(groups, session.groupId) : undefined;
@@ -54,6 +56,7 @@ export default function SessionPage() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [editingRoundIndex, setEditingRoundIndex] = useState<number | null>(null);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showEditSettings, setShowEditSettings] = useState(false);
   const deleteSession = useAppStore((s) => s.deleteSession);
 
   if (!hydrated || (!session && !synced)) {
@@ -243,6 +246,12 @@ export default function SessionPage() {
               精算を見る →
             </Link>
             <button
+              onClick={() => setShowEditSettings(true)}
+              className="flex-1 rounded-[var(--radius-md)] border border-[var(--line)] bg-transparent py-2.5 text-center text-sm text-[var(--ink-muted)] hover:text-[var(--ink)]"
+            >
+              設定を修正
+            </button>
+            <button
               onClick={() => {
                 if (session.rounds.length === 0) {
                   deleteSession(session.id);
@@ -321,6 +330,18 @@ export default function SessionPage() {
           onClose={() => setEditingRoundIndex(null)}
           onDelete={handleDeleteRound}
           startPoints={settings.startPoints}
+        />
+      )}
+
+      {/* 設定修正 */}
+      {showEditSettings && (
+        <EditSessionSettingsModal
+          session={session}
+          onSave={(newSettings, newChipConfig) => {
+            updateSessionSettings(session.id, newSettings, newChipConfig);
+            setShowEditSettings(false);
+          }}
+          onClose={() => setShowEditSettings(false)}
         />
       )}
     </div>
